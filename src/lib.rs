@@ -45,7 +45,35 @@ pub mod zero {
                 if let Err(e) = exec_rm(cmd, args, mp) {
                     println!("Error executing rm: {}", e);
                 }
-            }
+            } ,
+            Commands::Cd => {
+                if args.len() < 1 {
+                    println!("cd: missing operand");
+                } else {
+                    if args.len() > 1 {
+                        println!("cd: too many arguments");
+                        return;
+                    }
+                    let path = &args[0];
+                    if path == "-" {
+
+                        if mp.contains_key(&Commands::Cd) && let Some(old_path) = mp.get(&Commands::Cd) {
+                            println!("{}", old_path);
+                            if let Err(e) = std::env::set_current_dir(old_path) {
+                                println!("cd: {}: {}", old_path, e);
+                            } else {
+                                mp.insert(Commands::Cd, std::env::current_dir().unwrap().to_str().unwrap().to_string());
+                            }
+                        } 
+                        return;
+                    }
+                    mp.insert(Commands::Cd, std::env::current_dir().unwrap().to_str().unwrap().to_string());
+                    if let Err(e) = std::env::set_current_dir(path) {
+                        println!("cd: {}: {}", path, e);
+                    }
+                    // println!("{}", std::env::current_dir().unwrap().to_str().unwrap());
+                }
+            },
             _ => println!("Command {:?} not implemented yet", cmd),
         }
     }

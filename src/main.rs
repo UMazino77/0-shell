@@ -6,7 +6,7 @@ fn main() {
     let mut mp = HashMap::new();
     loop {
         let mut ar = String::new();
-
+        
         io::stdin()
             .read_line(&mut ar)
             .expect("Failed to read line");
@@ -33,7 +33,7 @@ fn main() {
                 }
             }
         }
-        println!("{:?}", b);
+        // println!("{:?}", b);
 
     }
 }
