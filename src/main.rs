@@ -1,10 +1,11 @@
 use shell::zero::*;
 use std::collections::HashMap;
 use rustyline::{Editor, error::ReadlineError};
+use shell::commands::echo::exec_echo;
 
 fn main() -> rustyline::Result<()> {
     let mut rl = Editor::<(),_>::new()?;
-    let _ = rl.load_history("history.txt");
+    let _ = rl.load_history("0shell_history.txt");
     
     let mut mp = HashMap::new();
     loop {
@@ -13,7 +14,11 @@ fn main() -> rustyline::Result<()> {
         path  = path.replace(&("/home/".to_owned() + &user), "~");
         
         let ar = match rl.readline(&format!("{} $ ", path)) {
-            Ok(line) => {
+            Ok(mut line) => {
+                let aaa  = line.trim().split_whitespace().collect::<Vec<&str>>();
+                if aaa[0] == "echo" {
+                    exec_echo(Commands::Echo, &mut aaa[1..].iter().map(|x| x.to_string()).collect(), &mut mp, &mut line);
+                }
                let _ = rl.add_history_entry(line.as_str());
                 let _ = rl.append_history("history.txt");
                 line
@@ -42,10 +47,13 @@ fn main() -> rustyline::Result<()> {
         for j in b.iter_mut() {
             if j.len() < 1 {
                 println!("$");
+                continue;
             }
             match Commands::from_str(&j[0]) {
                 Some(cmd) => {
-                    execute(cmd, &mut j[1..].to_owned(), &mut mp);
+                    if cmd != Commands::Echo {
+                        execute(cmd, &mut j[1..].to_owned(), &mut mp);
+                    }
                 }
                 None => {
                     println!("Unknown command: {}", j[0]);

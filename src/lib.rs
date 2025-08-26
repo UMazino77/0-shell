@@ -11,6 +11,8 @@ pub mod zero {
     use crate::commands::cat::exec_cat;
     use crate::commands::history::exec_history;
     use crate::commands::clear::exec_clear;
+    // use crate::commands::echo::exec_echo;
+
 
 
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -54,7 +56,7 @@ pub mod zero {
     pub fn execute(
         cmd: Commands,
         args: &mut Vec<String>,
-        mp: &mut std::collections::HashMap<Commands, String>
+        mp: &mut std::collections::HashMap<Commands, String>,
     ) {
         match cmd {
             Commands::Rm => {

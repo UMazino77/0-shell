@@ -8,5 +8,7 @@ pub mod mv ;
 pub mod cat ;
 pub mod history ;
 pub mod clear;
+pub mod echo;
+
 
 
