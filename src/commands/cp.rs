@@ -12,6 +12,9 @@ pub fn exec_cp(
     }
 
     detect_flags(cmd.clone(), args, mp);
+
+    println!("{:?}", mp) ;
+
     if !valid_flags(cmd.clone(), mp) {
         eprintln!("cp: invalid option");
         return;

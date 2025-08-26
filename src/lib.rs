@@ -70,7 +70,10 @@ pub mod zero {
         for arg in args.clone() {
             if arg.starts_with('-') {
                 for ch in arg[1..].chars() {
-                    mp.entry(cmd.clone()).or_insert(ch.to_string());
+                    let amp = mp.entry(cmd.clone()).or_insert(ch.to_string());
+                    if !amp.contains(ch) {
+                        amp.push(ch);
+                    }
                 }
                 args.retain(|arg| !arg.starts_with('-'));
             }
