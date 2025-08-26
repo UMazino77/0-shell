@@ -4,6 +4,7 @@ pub mod zero {
     use crate::commands::cd::exec_cd;
     use crate::commands::rm::exec_rm;
     use crate::commands::pwd::exec_pwd;
+    use crate::commands::mkdir::exec_mkdir;
 
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub enum Commands {
@@ -50,6 +51,7 @@ pub mod zero {
             } ,
             Commands::Cd =>  exec_cd(cmd, args, mp) ,
             Commands::Pwd => exec_pwd(cmd, args),
+            Commands::Mkdir => exec_mkdir(cmd, args, mp),
             Commands::Exit => std::process::exit(0),
             _ => println!("Command {:?} not implemented yet", cmd),
         }
@@ -66,6 +68,9 @@ pub mod zero {
                     match ch {
                         'r' => {
                             mp.insert(cmd.clone(), "r".to_owned());
+                        }
+                        'p' => {
+                            mp.insert(cmd.clone(), "p".to_owned());
                         }
                         _ => println!("Error"),
                     }
