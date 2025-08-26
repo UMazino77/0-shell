@@ -23,6 +23,10 @@ pub fn exec_rm(
             continue;
         }
 
+        if !valid_flags(cmd.clone(), mp) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid flags"));
+        }
+
         let metadata = fs::metadata(path)?;
 
         if metadata.is_dir() {

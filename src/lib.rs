@@ -67,17 +67,48 @@ pub mod zero {
         for arg in args {
             if arg.starts_with('-') {
                 for ch in arg[1..].chars() {
-                    match ch {
-                        'r' => {
-                            mp.insert(cmd.clone(), "r".to_owned());
+                    mp.entry(cmd.clone()).or_insert(ch.to_string()).push(ch);
+                }
+            }
+        }
+    }
+
+    pub fn valid_flags(cmd : Commands, mp : &mut std::collections::HashMap<Commands, String>)-> bool
+        {
+            // println!("{:?} --- {:?}", cmd, mp);
+        match cmd {
+            Commands::Rm => {
+                if let Some(flag) = mp.get(&cmd) {
+                    for ch in flag.chars() {
+                        match ch {
+                            'r' => {},
+                            _ => {
+                                return checker(cmd.clone(), mp, ch);
+                            }
                         }
-                        'p' => {
-                            mp.insert(cmd.clone(), "p".to_owned());
-                        }
-                        _ => println!("Error"),
                     }
                 }
-            } 
+            },
+            Commands::Mkdir => {
+                if let Some(flag) = mp.get(&cmd) {
+                    for ch in flag.chars() {
+                        match ch {
+                            'p' => {},
+                            _ => {
+                                return checker(cmd.clone(), mp, ch);
+                            }
+                        }
+                    }
+                }
+            },
+            _ => {}
         }
+        true
+    }
+
+    pub fn checker(cmd : Commands, mp : &mut std::collections::HashMap<Commands, String>, flag : char)->bool{
+        mp.remove(&cmd);
+        println!("{:?}: invalid option -- '{}'", cmd, flag);
+        false
     }
 }

@@ -13,6 +13,10 @@ pub fn exec_mkdir(
     }
 
     detect_flags(Mkdir, args, mp);
+    if !valid_flags(Mkdir, mp) {
+        // println!("mkdir: invalid option");
+        return;
+    }
 
     if args.len() > 1 && !mp.contains_key(&Mkdir) {
         println!("mkdir: too many arguments");
