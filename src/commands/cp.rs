@@ -13,14 +13,14 @@ pub fn exec_cp(
 
     detect_flags(cmd.clone(), args, mp);
 
-    println!("{:?}", mp) ;
+    // println!("{:?}", mp) ;
 
     if !valid_flags(cmd.clone(), mp) {
         eprintln!("cp: invalid option");
         return;
     }
 
-    // println!("{:?} --- {:?}", args, mp);
+    // println!("{:?} --- {:?}      +++++++++++++", args, mp);
 
     let src = &args[0];
     let dest = &args[1];

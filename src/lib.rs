@@ -7,7 +7,7 @@ pub mod zero {
     use crate::commands::mkdir::exec_mkdir;
     use crate::commands::exit::exec_exit;
     use crate::commands::cp::exec_cp;
-
+    use crate::commands::mv::exec_mv;
 
 
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -54,6 +54,7 @@ pub mod zero {
                 }
             } ,
             Commands::Cd =>  exec_cd(cmd, args, mp) ,
+            Commands::Mv =>  exec_mv(cmd, args, mp) ,
             Commands::Pwd => exec_pwd(cmd, args),
             Commands::Mkdir => exec_mkdir(cmd, args, mp),
             Commands::Cp => exec_cp(cmd,args, mp) ,
@@ -69,8 +70,10 @@ pub mod zero {
     ) {
         for arg in args.clone() {
             if arg.starts_with('-') {
+                // println!("{} --- ++++", arg);
                 for ch in arg[1..].chars() {
                     let amp = mp.entry(cmd.clone()).or_insert(ch.to_string());
+                    // println!("{} --- ++++", amp);
                     if !amp.contains(ch) {
                         amp.push(ch);
                     }

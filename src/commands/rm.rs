@@ -33,6 +33,7 @@ pub fn exec_rm(
             if mp.contains_key(&cmd) && mp.get(&cmd) == Some(&"r".to_string()) {
                 fs::remove_dir_all(path)?;
             } else {
+                
                 println!("rm: cannot remove '{}': Is a directory", i);
             }
         } else if metadata.is_file() {

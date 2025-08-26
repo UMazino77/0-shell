@@ -4,3 +4,4 @@ pub mod pwd;
 pub mod mkdir;
 pub mod exit;
 pub mod cp ;
+pub mod mv ;
