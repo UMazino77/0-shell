@@ -32,6 +32,7 @@ pub fn exec_cd(
             }
             mp.insert(Commands::Cd, std::env::current_dir().unwrap().to_str().unwrap().to_string());
             if let Err(e) = std::env::set_current_dir(&mut path) {
+                println!("cd: {}: {}", path, e);
             }
             // println!("{}", std::env::current_dir().unwrap().to_str().unwrap());
         }

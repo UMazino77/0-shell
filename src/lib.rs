@@ -3,6 +3,7 @@ pub mod commands;
 pub mod zero {
     use crate::commands::cd::exec_cd;
     use crate::commands::rm::exec_rm;
+    use crate::commands::pwd::exec_pwd;
 
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub enum Commands {
@@ -48,6 +49,8 @@ pub mod zero {
                 }
             } ,
             Commands::Cd =>  exec_cd(cmd, args, mp) ,
+            Commands::Pwd => exec_pwd(cmd, args),
+            Commands::Exit => std::process::exit(0),
             _ => println!("Command {:?} not implemented yet", cmd),
         }
     }

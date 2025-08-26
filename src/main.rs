@@ -20,7 +20,7 @@ fn main() {
         }
         let mut b: Vec<Vec<String>> = Vec::new();
         for i in args.iter() {
-            let a = i.split(|x: char| x.is_ascii_whitespace()).map(|x| x.to_string()).collect();
+            let a = i.split_whitespace().map(|x| x.to_string()).collect();
             b.push(a);
         }
         for j in b.iter_mut() {
