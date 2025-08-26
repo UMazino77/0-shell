@@ -1,7 +1,8 @@
+pub mod commands;
+
 pub mod zero {
-    use std::fs;
-    use std::io;  
-    use std::path::Path;
+    use crate::commands::cd::exec_cd;
+    use crate::commands::rm::exec_rm;
 
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub enum Commands {
@@ -46,73 +47,9 @@ pub mod zero {
                     println!("Error executing rm: {}", e);
                 }
             } ,
-            Commands::Cd => {
-                if args.len() < 1 {
-                    println!("cd: missing operand");
-                } else {
-                    if args.len() > 1 {
-                        println!("cd: too many arguments");
-                        return;
-                    }
-                    let mut path = &mut args[0];
-                    let user = whoami::username();
-                    *path = path.replace("~", &("/home/".to_owned()+&user));
-                    if path == "-" {
-
-                        if mp.contains_key(&Commands::Cd) && let Some(old_path) = mp.get(&Commands::Cd) {
-                            println!("{}", old_path);
-                            if let Err(e) = std::env::set_current_dir(old_path) {
-                                println!("cd: {}: {}", old_path, e);
-                            } else {
-                                mp.insert(Commands::Cd, std::env::current_dir().unwrap().to_str().unwrap().to_string());
-                            }
-                        } 
-                        return;
-                    }
-                    mp.insert(Commands::Cd, std::env::current_dir().unwrap().to_str().unwrap().to_string());
-                    if let Err(e) = std::env::set_current_dir(&mut path) {
-                        println!("cd: {}: {}", path, e);
-                    }
-                    // println!("{}", std::env::current_dir().unwrap().to_str().unwrap());
-                }
-            },
+            Commands::Cd =>  exec_cd(cmd, args, mp) ,
             _ => println!("Command {:?} not implemented yet", cmd),
         }
-    }
-
-    pub fn exec_rm(
-        cmd: Commands,
-        args: &[String],
-        mp: &mut std::collections::HashMap<Commands, String>,
-    ) -> io::Result<()> {
-        detect_flags(cmd.clone(), args, mp);
-
-        for i in args {
-            if i.starts_with('-') {
-                continue;
-            }
-            
-            let path_str = format!("./{}", i);
-            let path = Path::new(&path_str);
-
-            if !path.exists() {
-                println!("rm: cannot remove '{}': No such file or directory", i);
-                continue;
-            }
-
-            let metadata = fs::metadata(path)?;
-
-            if metadata.is_dir() {
-                if mp.contains_key(&cmd) && mp.get(&cmd) == Some(&"r".to_string()) {
-                    fs::remove_dir_all(path)?;
-                } else {
-                    println!("rm: cannot remove '{}': Is a directory", i);
-                }
-            } else if metadata.is_file() {
-                fs::remove_file(path)?;
-            }
-        }
-        Ok(())
     }
 
     pub fn detect_flags(
