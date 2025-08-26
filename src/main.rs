@@ -1,18 +1,34 @@
 use shell::zero::*;
-use std::{io};
 use std::collections::HashMap;
+use rustyline::{Editor, error::ReadlineError};
 
-fn main() {
+fn main() -> rustyline::Result<()> {
+    let mut rl = Editor::<(),_>::new()?;
+    let _ = rl.load_history("history.txt");
+    
     let mut mp = HashMap::new();
     loop {
-        let mut ar = String::new();
         let mut path = std::env::current_dir().unwrap().to_str().unwrap().to_string();
         let user = whoami::username();
         path  = path.replace(&("/home/".to_owned() + &user), "~");
-        eprint!("{} $ ", path);
-        io::stdin()
-            .read_line(&mut ar)
-            .expect("Failed to read line");
+        
+        let ar = match rl.readline(&format!("{} $ ", path)) {
+            Ok(line) => {
+               let _ = rl.add_history_entry(line.as_str());
+                let _ = rl.append_history("history.txt");
+                line
+            }
+            Err(ReadlineError::Interrupted) => {
+                println!("^C");
+                break;
+            }
+            Err(ReadlineError::Eof) => {
+                println!("^D");
+                break;
+            }
+            Err(_) => continue,
+        };
+        
         let args: Vec<&str> = ar.trim().split(|x:char| x == ';').collect();
         if args.len() < 1 {
             println!("Usage: <command> [args...]");
@@ -37,6 +53,7 @@ fn main() {
             }
         }
         // println!("{:?}", b);
-
     }
+    
+    Ok(())
 }

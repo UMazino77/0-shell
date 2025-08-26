@@ -1,9 +1,9 @@
 use crate::zero::Commands;
 
 pub fn exec_cd(
-    _cmd: crate::zero::Commands,
+    _cmd: Commands,
     args: &mut Vec<String>,
-    mp: &mut std::collections::HashMap<crate::zero::Commands, String>
+    mp: &mut std::collections::HashMap<Commands, String>
 ) {
     {
         if args.len() < 1 {

@@ -5,4 +5,7 @@ edition = "2024"
 
 [dependencies]
 path-clean = "1.0"
+rustyline = "17.0.1"
+rustyline-derive = "0.11.1"
 whoami = "1.6.1"
+clearscreen = "2.0"
