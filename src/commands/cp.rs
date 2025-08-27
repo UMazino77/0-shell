@@ -48,12 +48,12 @@ pub fn exec_cp(
                 return;
             }
             for i in std::fs::read_dir(src_path).unwrap() {
-                let i = i.unwrap();
-                let file_name = i.file_name();
+                let ii = i.unwrap();
+                let file_name = ii.file_name();
                 let new_dest = dest_path.join(file_name);
                 exec_cp(
                     cmd.clone(),
-                    &mut vec![i.path().to_str().unwrap().to_string(), new_dest.to_str().unwrap().to_string()],
+                    &mut vec![ii.path().to_str().unwrap().to_string(), new_dest.to_str().unwrap().to_string()],
                     mp
                 );
             }

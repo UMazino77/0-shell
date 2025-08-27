@@ -1,6 +1,7 @@
 use crate::zero::*;
 use crate::zero::Commands;
 use std::path::Path;
+use std::fs::*;
 
 pub fn exec_ls(
     cmd: Commands,
@@ -11,7 +12,7 @@ pub fn exec_ls(
     if !valid_flags(cmd.clone(), mp) {
         return;
     }
-
+    let mut hidden = false;
     let mut files = Vec::new();
     let mut folders = Vec::new();
 
@@ -20,32 +21,34 @@ pub fn exec_ls(
     sort_fd(&mut files);
     sort_fd(&mut folders);
 
+    // println!("{:?}", folders);
+
     match mp.get(&cmd) {
         Some(flags) => {
             if flags.contains('a') {
                 folders.insert(0, String::from(".."));
                 folders.insert(0, String::from("."));
+                hidden = true;
             }
             if flags.contains('l') {
-                println!("long format");
+                // println!("long format");
             }
         }
         None => {
-            default_ls(files.clone(), folders.clone());
+            default_ls(files.clone(), folders.clone(), hidden);
             // println!("default");
         }
     }
 
-    println!();
-    println!();
-    println!();
-    println!("{:?}  --- ++++ ", folders);
-    println!();
-    println!();
-    println!();
-    println!();
-    println!("{:?}  --- ++++ ", files);
-
+    // println!();
+    // println!();
+    // println!();
+    // println!("{:?}  --- ++++ ", folders);
+    // println!();
+    // println!();
+    // println!();
+    // println!();
+    // println!("{:?}  --- ++++ ", files);
 }
 
 pub fn handle_files_folders(
@@ -68,53 +71,98 @@ pub fn handle_files_folders(
     }
 }
 
-pub fn default_ls(files : Vec<String> , _folders : Vec<String>) {
-    display_files(files) ;
-    // display_folders(folders) ;
+pub fn default_ls(files: Vec<String>, folders: Vec<String>, hidden: bool) {
+    display_files(files.clone(), folders.len() > 1);
+    display_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden);
 }
 
-pub fn display_files(files : Vec<String>) {
+pub fn display_files(files: Vec<String>, cc: bool) {
     // let ter_width = todo!() ;
     // let max = ter_width
-    let mut j = 0 ; 
+    let mut j = 0;
     for i in &files {
-        if j == files.len()-1 {
+        if j == files.len() - 1 {
             println!("{i}");
+            if cc {
+                println!();
+            }
         } else {
-            print!("{}  ", i.clone()) ;
+            print!("{}  ", i.clone());
         }
-        j += 1 ;
+        j += 1;
     }
 }
 
-// pub fn display_folders(folders : Vec<String>) {
+pub fn display_folders(folders: Vec<String>, cc: bool, hidden: bool) {
+    let mut jj = 0;
+    for i in &folders {
+        let c = format!("./{}", i);
+        let a = Path::new(&c);
+        let mut aa: Vec<_> = read_dir(a).unwrap().collect();
+        let size = aa.len();
 
-// }
+        if cc {
+            println!("{i}:");
+        }
+        let mut j = 0;
 
-pub fn sort_fd(a : &mut Vec<String>) {
+        if !hidden {
+            aa.retain(|x| !x.as_ref().unwrap().file_name().to_string_lossy().starts_with("."));
+        }
+
+        let mut new_fold = vec![] ;
+
+        for i in &aa {
+            let ii = i.as_ref().unwrap();
+            let name = ii.file_name();
+            new_fold.push(name.to_string_lossy().to_string()) ;
+        }
+        sort_fd(&mut new_fold);
+        display_files(new_fold, jj != folders.clone().len()-1) ;
+        
+        jj += 1;
+    }
+}
+
+pub fn sort_fd(a: &mut Vec<String>) {
     for i in 0..a.len() {
-        for j in i+1..a.len() {
-            let aa : Vec<_> = a[i].clone().to_ascii_lowercase().chars().into_iter().filter(|x| x.is_alphanumeric()).collect();
-            let bb : Vec<_> = a[j].clone().to_ascii_lowercase().chars().into_iter().filter(|x| x.is_alphanumeric()).collect();
+        for j in i + 1..a.len() {
+            let aa: Vec<_> = a[i]
+                .clone()
+                .to_ascii_lowercase()
+                .chars()
+                .into_iter()
+                .filter(|x| x.is_alphanumeric())
+                .collect();
+            let bb: Vec<_> = a[j]
+                .clone()
+                .to_ascii_lowercase()
+                .chars()
+                .into_iter()
+                .filter(|x| x.is_alphanumeric())
+                .collect();
             // if aa == bb {
             //     /*
             //         check by time of last modification
             //     */
             // }
+            // println!("{:?} ---+++ {:?}", aa , bb) ;
             for k in 0..min(aa.len(), bb.len()) {
-                if aa[k] > bb[k] || (k == min(aa.len(), bb.len()) -1 && aa.len() > bb.len()){
-                    let temp = a[i].clone() ;
-                    a[i] = a[j].clone() ;
-                    a[j] = temp ;
+                if aa[k] > bb[k] || (k == min(aa.len(), bb.len()) - 1 && aa.len() > bb.len()) {
+                    let temp = a[i].clone();
+                    a[i] = a[j].clone();
+                    a[j] = temp;
                     break;
+                } else if aa[k] != bb[k] {
+                    break ;
                 }
             }
         }
     }
 }
 
-pub fn min(a : usize , b : usize) -> usize {
-    if a<b {
+pub fn min(a: usize, b: usize) -> usize {
+    if a < b {
         return a;
     }
     b
