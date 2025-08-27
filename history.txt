@@ -82,3 +82,11 @@ clear
 cle
 clear
 ls Cargo.lock Cargo.toml
+ls Cargo.toml Cargo.lock
+clear
+ls Cargo.toml cargo.tomlll
+clear
+ls cargo.tomlll Cargo.toml
+clear
+ls cargo.tomlll Cargo.toml
+clear

@@ -17,6 +17,9 @@ pub fn exec_ls(
 
     handle_files_folders(&mut files, &mut folders, args);
 
+    sort_fd(&mut files);
+    sort_fd(&mut folders);
+
     match mp.get(&cmd) {
         Some(flags) => {
             if flags.contains('a') {
@@ -82,4 +85,37 @@ pub fn display_files(files : Vec<String>) {
         }
         j += 1 ;
     }
+}
+
+// pub fn display_folders(folders : Vec<String>) {
+
+// }
+
+pub fn sort_fd(a : &mut Vec<String>) {
+    for i in 0..a.len() {
+        for j in i+1..a.len() {
+            let aa : Vec<_> = a[i].clone().to_ascii_lowercase().chars().into_iter().filter(|x| x.is_alphanumeric()).collect();
+            let bb : Vec<_> = a[j].clone().to_ascii_lowercase().chars().into_iter().filter(|x| x.is_alphanumeric()).collect();
+            // if aa == bb {
+            //     /*
+            //         check by time of last modification
+            //     */
+            // }
+            for k in 0..min(aa.len(), bb.len()) {
+                if aa[k] > bb[k] || (k == min(aa.len(), bb.len()) -1 && aa.len() > bb.len()){
+                    let temp = a[i].clone() ;
+                    a[i] = a[j].clone() ;
+                    a[j] = temp ;
+                    break;
+                }
+            }
+        }
+    }
+}
+
+pub fn min(a : usize , b : usize) -> usize {
+    if a<b {
+        return a;
+    }
+    b
 }
