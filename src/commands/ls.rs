@@ -12,6 +12,10 @@ pub fn exec_ls(
     if !valid_flags(cmd.clone(), mp) {
         return;
     }
+
+    if args.is_empty() {
+        args.push(String::from("."));
+    }
     let mut hidden = false;
     let mut files = Vec::new();
     let mut folders = Vec::new();

@@ -1,15 +1,4 @@
 #V2
-echo "escaped \\\\"quote\\\\""
-echo "escaped \\"quote\\""
-echo "Mix 'of' \\"both\\" types"
-echo "He said 'hello world'" 
-echo "path\\\\to\\\\file"
-echo "\\\\"quotes\\\\" chaos"
-echo "He said 'hello world'" 
-echo "\\\\"quotes\\\\" chaos"
-echo "He said 'hello world'" 
-echo "\\\\"quotes\\\\" chaos"
-echo "\\\\\\"quotes\\\\\\" chaos"
 ls
 ls -l
 ls -lF
@@ -99,3 +88,14 @@ exi
 exit
 clear
 ls -a src
+clear
+ls src ; ls target.txt ; ls target
+ls src -a ; ls -a target.txt ; ls target      -a
+ls -a
+clear
+ls 
+ls -a
+clear
+ls -a
+ls
+ls -a
