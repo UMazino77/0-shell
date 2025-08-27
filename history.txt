@@ -52,3 +52,16 @@ ls
 clear
 echo "escaped \\"quote\\""
 echo "escaped \\"quote\\"" 
+echo "escaped \\\\"quote\\\\""
+.replace("\\"\\"", "")
+echo "escaped \\\\"quote\\\\""
+echo "escaped \\"quote\\""
+echo "Mix 'of' \\"both\\" types"
+echo "He said 'hello world'" 
+echo "path\\\\to\\\\file"
+echo "\\\\"quotes\\\\" chaos"
+echo "He said 'hello world'" 
+echo "\\\\"quotes\\\\" chaos"
+echo "He said 'hello world'" 
+echo "\\\\"quotes\\\\" chaos"
+echo "\\\\\\"quotes\\\\\\" chaos"
