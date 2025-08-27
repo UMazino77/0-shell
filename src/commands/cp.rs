@@ -42,6 +42,7 @@ pub fn exec_cp(
 
     if src_path.is_dir() {
         if mp.contains_key(&Commands::Cp) && mp.get(&Commands::Cp) == Some(&"r".to_string()) {
+            mp.clear();
             if let Err(e) = std::fs::create_dir_all(dest_path) {
                 eprintln!("cp: error creating directory '{}': {}", dest, e);
                 return;
@@ -61,9 +62,10 @@ pub fn exec_cp(
             return ;
         }
     } else {
+        mp.clear();
         if let Err(e) = std::fs::copy(src_path, dest_path) {
             eprintln!("cp: error copying file '{}': {}", src, e);
         }
     }
-
+    mp.clear();
 }

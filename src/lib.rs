@@ -11,6 +11,8 @@ pub mod zero {
     use crate::commands::cat::exec_cat;
     use crate::commands::history::exec_history;
     use crate::commands::clear::exec_clear;
+    use crate::commands::ls::exec_ls;
+
     // use crate::commands::echo::exec_echo;
 
 
@@ -73,6 +75,7 @@ pub mod zero {
             Commands::Cat => exec_cat(cmd, args, mp),
             Commands::Clear => exec_clear(),
             Commands::History => exec_history(cmd, args, mp),
+            Commands::Ls => exec_ls(cmd, args, mp),
             _ => println!("Command {:?} not implemented yet", cmd),
         }
     }
@@ -114,6 +117,9 @@ pub mod zero {
             }
             Commands::Cat => {
                 return check(cmd.clone(), mp, "n".to_string());
+            }
+            Commands::Ls => {
+                return check(cmd.clone(), mp, "alF".to_string());
             }
             _ => {}
         }

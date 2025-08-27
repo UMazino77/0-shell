@@ -65,3 +65,17 @@ echo "\\\\"quotes\\\\" chaos"
 echo "He said 'hello world'" 
 echo "\\\\"quotes\\\\" chaos"
 echo "\\\\\\"quotes\\\\\\" chaos"
+ls
+ls -l
+ls -lF
+ls -alF
+ls lalf
+ls alf
+ls -a
+ls -al
+ls -a
+ls a
+ls al
+ls alf
+ls -alf
+clear

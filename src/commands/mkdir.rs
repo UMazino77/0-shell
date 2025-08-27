@@ -24,15 +24,14 @@ pub fn exec_mkdir(
     }
     if mp.contains_key(&Mkdir) && mp.get(&Mkdir) == Some(&"p".to_string()) {
         for dir in args.iter() {
-            if !dir.starts_with('-') {
-                let path = Path::new(dir);
-                if path.exists() {
-                    eprintln!("mkdir: cannot create directory '{}': File exists", dir);
-                    continue;
-                }
-                if let Err(_) = std::fs::create_dir_all(dir) {
-                    return ;
-                }
+            let path = Path::new(dir);
+            if path.exists() {
+                eprintln!("mkdir: cannot create directory '{}': File exists", dir);
+                continue;
+            }
+            if let Err(_) = std::fs::create_dir_all(dir) {
+                mp.clear();
+                return;
             }
         }
         return;
@@ -43,6 +42,7 @@ pub fn exec_mkdir(
         eprintln!("mkdir: cannot create directory '{}': File exists", dir_name);
     }
     if let Err(_) = std::fs::create_dir(dir_name) {
-        return ;
+        mp.clear();
+        return;
     }
 }

@@ -40,5 +40,8 @@ pub fn exec_rm(
             fs::remove_file(path)?;
         }
     }
+    
+    mp.clear();
+
     Ok(())
 }

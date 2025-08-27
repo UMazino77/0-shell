@@ -26,6 +26,7 @@ pub fn exec_cat(
         return;
     }
     if mp.contains_key(&Commands::Cat) && mp.get(&Commands::Cat) == Some(&"n".to_string()) {
+        mp.clear();
         if let Ok(contents) = std::fs::read_to_string(file_name) {
             let mut j = 0 ;
             for line in contents.lines() {

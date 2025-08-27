@@ -9,6 +9,6 @@ pub mod cat ;
 pub mod history ;
 pub mod clear;
 pub mod echo;
-
+pub mod ls ;
 
 
