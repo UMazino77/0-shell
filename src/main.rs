@@ -17,11 +17,13 @@ fn main() -> rustyline::Result<()> {
             Ok(mut line) => {
                 let aaa  = line.trim().split_whitespace().collect::<Vec<&str>>();
                 if aaa[0] == "echo" {
-                    exec_echo(Commands::Echo, &mut aaa[1..].iter().map(|x| x.to_string()).collect(), &mut mp, &mut line);
+                    exec_echo(Commands::Echo, &mut line, &mut mp);
                 }
-               let _ = rl.add_history_entry(line.as_str());
-                let _ = rl.append_history("history.txt");
-                line
+               if !line.contains("history") {
+                   let _ = rl.add_history_entry(line.as_str());
+                   let _ = rl.append_history("history.txt");
+               }
+               line
             }
             Err(ReadlineError::Interrupted) => {
                 println!("^C");

@@ -1,26 +1,38 @@
 use crate::zero::Commands;
-use rustyline::* ;
+use rustyline::*;
+use rustyline::error::ReadlineError;
 
 pub fn exec_echo(
     _cmd: Commands,
-    args: &mut Vec<String>,
+    line: &mut String,
     _mp: &mut std::collections::HashMap<Commands, String>,
-    line: &mut String
 ) {
-    if args.len() == 0 {
+    if line.replace("echo", "").trim().is_empty() {
         println!();
         return;
     }
-    let mut output = args.join(" ") ;
-    if (output.len() - output.replace("\"", "").len())%2 == 1 {
-        let additional_input = Editor::<(),_>::new().expect("Failed to create editor").readline("").unwrap_or_default();
-        eprint!(">");
-        
-        args.push(additional_input+"\n") ;
-        return exec_echo(_cmd, args, _mp, line);
+    let mut output = line.clone().replace("echo", "").trim().to_string();
+    let mut cc = Editor::<(), _>::new().expect("Failed to create editor");
+    
+    if (output.len() - output.replace("\"", "").len()) % 2 == 1 {
+        match cc.readline("dquote> ") {
+            Ok(additional_input) => {
+                line.push('\n');
+                line.push_str(&additional_input);
+                return exec_echo(_cmd, line, _mp);
+            }
+            Err(ReadlineError::Interrupted) => {
+                println!("^C");
+                return;
+            }
+            Err(ReadlineError::Eof) => {
+                println!("^D");
+                return;
+            }
+            Err(_) => return,
+        }
     }
-    output = args.join(" ") ;
-    output = output.replace("\\n", "\n").replace("\\t", "\t").replace("\"", "") ;
-    *line = format!("echo {}", output);
-    print!("{}", output);
+
+    output = output.replace("\\n", "\n").replace("\\t", "\t").replace("\"", "").replace("\\\"", "\"");
+    println!("{}", output);
 }

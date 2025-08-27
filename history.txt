@@ -10,3 +10,45 @@ clear
 echo    l\n ll\n lll\n \n
 clear
 echo    l\n ll\n lll\n \n
+clear
+echo    l\n ll\n lll\n \n
+history
+clear
+echo " " " l\n ll\n lll\n "\n
+history
+echo """l\nll\nlll\n"\n
+history
+clear
+echo """l\nll\nlll\n"\n
+echo " " "llllll"
+clear
+echo " " "l\nll\nlll\n"\n
+history
+echo " " "\nl\nll\nlll\n"
+history
+echo " " "\nl\nll\nlll\n"
+echo " " "
+echo " " "\nl\nll\nlll\n"
+echo " " "\n\ncle\n\n\n\n"
+cle
+clear
+echo " " "\nl\nl\nl\n\nexir\n"
+clear
+echo " " "\n"
+clear
+echo " " "\ndquote> l\ndquote> ll\ndquote> lll\ndquote> "
+exit
+echo " " "\nl\nll\nlll\n\n"
+clear
+echo " " "\nl\nll\nlll\n"
+history
+" " "
+clear
+echo " " "
+clear
+echo " " "\nl\nll\nlll\n"
+clear
+ls
+clear
+echo "escaped \\"quote\\""
+echo "escaped \\"quote\\"" 
