@@ -12,26 +12,16 @@ pub fn exec_ls(
         return;
     }
 
-    let mut files = Vec::new() ;
+    let mut files = Vec::new();
     let mut folders = Vec::new();
 
-    handle_files_folders(&mut files , &mut folders , args) ;
-
-    println!("{:?}  --- ++++ ", folders) ;
-    println!();
-    println!();
-    println!();
-    println!();
-    println!("{:?}  --- ++++ ", files) ;
-
+    handle_files_folders(&mut files, &mut folders, args);
 
     match mp.get(&cmd) {
         Some(flags) => {
             if flags.contains('a') {
-                println!("all");
-            }
-            if flags.contains('F') {
-                println!("classify");
+                folders.insert(0, String::from(".."));
+                folders.insert(0, String::from("."));
             }
             if flags.contains('l') {
                 println!("long format");
@@ -42,21 +32,32 @@ pub fn exec_ls(
             println!("default");
         }
     }
+
+    println!("{:?}  --- ++++ ", folders);
+    println!();
+    println!();
+    println!();
+    println!();
+    println!("{:?}  --- ++++ ", files);
     
 }
 
-pub fn handle_files_folders(files : &mut Vec<String>, folders : &mut Vec<String> , args: &mut Vec<String>) {
+pub fn handle_files_folders(
+    files: &mut Vec<String>,
+    folders: &mut Vec<String>,
+    args: &mut Vec<String>
+) {
     for i in args {
-        let fd_name = format!("./{}", i) ;
+        let fd_name = format!("./{}", i);
         let path = Path::new(&fd_name);
         if !path.exists() {
-           println!("ls: cannot access '{}': No such file or directory", i) ;
-           continue ;
+            println!("ls: cannot access '{}': No such file or directory", i);
+            continue;
         }
         if path.is_dir() {
-            folders.push(format!{"./{}", i}) ;
+            folders.push(format!("./{}", i));
         } else {
-            files.push(format!{"./{}", i})
+            files.push(format!("./{}", i));
         }
     }
 }
