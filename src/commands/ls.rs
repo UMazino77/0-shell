@@ -28,18 +28,21 @@ pub fn exec_ls(
             }
         }
         None => {
-            // default_ls();
-            println!("default");
+            default_ls(files.clone(), folders.clone());
+            // println!("default");
         }
     }
 
+    println!();
+    println!();
+    println!();
     println!("{:?}  --- ++++ ", folders);
     println!();
     println!();
     println!();
     println!();
     println!("{:?}  --- ++++ ", files);
-    
+
 }
 
 pub fn handle_files_folders(
@@ -55,13 +58,28 @@ pub fn handle_files_folders(
             continue;
         }
         if path.is_dir() {
-            folders.push(format!("./{}", i));
+            folders.push(i.clone());
         } else {
-            files.push(format!("./{}", i));
+            files.push(i.clone());
         }
     }
 }
 
-// pub fn default_ls() {
+pub fn default_ls(files : Vec<String> , _folders : Vec<String>) {
+    display_files(files) ;
+    // display_folders(folders) ;
+}
 
-// }
+pub fn display_files(files : Vec<String>) {
+    // let ter_width = todo!() ;
+    // let max = ter_width
+    let mut j = 0 ; 
+    for i in &files {
+        if j == files.len()-1 {
+            println!("{i}");
+        } else {
+            print!("{}  ", i.clone()) ;
+        }
+        j += 1 ;
+    }
+}
