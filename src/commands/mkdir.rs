@@ -30,7 +30,7 @@ pub fn exec_mkdir(
                 continue;
             }
             if let Err(_) = std::fs::create_dir_all(dir) {
-                mp.clear();
+                
                 return;
             }
         }
@@ -42,7 +42,7 @@ pub fn exec_mkdir(
         eprintln!("mkdir: cannot create directory '{}': File exists", dir_name);
     }
     if let Err(_) = std::fs::create_dir(dir_name) {
-        mp.clear();
+        
         return;
     }
 }

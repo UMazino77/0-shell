@@ -79,3 +79,5 @@ ls al
 ls alf
 ls -alf
 clear
+cle
+clear

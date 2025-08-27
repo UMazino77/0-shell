@@ -18,6 +18,7 @@ fn main() -> rustyline::Result<()> {
                 let aaa  = line.trim().split_whitespace().collect::<Vec<&str>>();
                 if aaa[0] == "echo" {
                     exec_echo(Commands::Echo, &mut line, &mut mp);
+                    mp.clear();
                 }
                if !line.contains("history") {
                    let _ = rl.add_history_entry(line.as_str());

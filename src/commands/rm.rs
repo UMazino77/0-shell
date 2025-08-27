@@ -41,7 +41,5 @@ pub fn exec_rm(
         }
     }
     
-    mp.clear();
-
     Ok(())
 }

@@ -1,15 +1,29 @@
 use crate::zero::*;
 use crate::zero::Commands;
+use std::path::Path;
 
 pub fn exec_ls(
     cmd: Commands,
-    _args: &mut Vec<String>,
+    args: &mut Vec<String>,
     mp: &mut std::collections::HashMap<Commands, String>
 ) {
-    detect_flags(cmd.clone(), _args, mp);
+    detect_flags(cmd.clone(), args, mp);
     if !valid_flags(cmd.clone(), mp) {
         return;
     }
+
+    let mut files = Vec::new() ;
+    let mut folders = Vec::new();
+
+    handle_files_folders(&mut files , &mut folders , args) ;
+
+    println!("{:?}  --- ++++ ", folders) ;
+    println!();
+    println!();
+    println!();
+    println!();
+    println!("{:?}  --- ++++ ", files) ;
+
 
     match mp.get(&cmd) {
         Some(flags) => {
@@ -28,7 +42,23 @@ pub fn exec_ls(
             println!("default");
         }
     }
-    mp.clear();
+    
+}
+
+pub fn handle_files_folders(files : &mut Vec<String>, folders : &mut Vec<String> , args: &mut Vec<String>) {
+    for i in args {
+        let fd_name = format!("./{}", i) ;
+        let path = Path::new(&fd_name);
+        if !path.exists() {
+           println!("ls: cannot access '{}': No such file or directory", i) ;
+           continue ;
+        }
+        if path.is_dir() {
+            folders.push(format!{"./{}", i}) ;
+        } else {
+            files.push(format!{"./{}", i})
+        }
+    }
 }
 
 // pub fn default_ls() {

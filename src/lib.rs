@@ -66,16 +66,16 @@ pub mod zero {
                     println!("Error executing rm: {}", e);
                 }
             }
-            Commands::Cd => exec_cd(cmd, args, mp),
-            Commands::Mv => exec_mv(cmd, args, mp),
-            Commands::Pwd => exec_pwd(cmd, args),
-            Commands::Mkdir => exec_mkdir(cmd, args, mp),
-            Commands::Cp => exec_cp(cmd, args, mp),
-            Commands::Exit => exec_exit(args),
-            Commands::Cat => exec_cat(cmd, args, mp),
-            Commands::Clear => exec_clear(),
-            Commands::History => exec_history(cmd, args, mp),
-            Commands::Ls => exec_ls(cmd, args, mp),
+            Commands::Cd => {exec_cd(cmd, args, mp); mp.clear()},
+            Commands::Mv => {exec_mv(cmd, args, mp); mp.clear()},
+            Commands::Pwd => {exec_pwd(cmd, args); mp.clear()},
+            Commands::Mkdir => {exec_mkdir(cmd, args, mp); mp.clear()},
+            Commands::Cp => {exec_cp(cmd, args, mp); mp.clear()},
+            Commands::Exit => {exec_exit(args); mp.clear()},
+            Commands::Cat => {exec_cat(cmd, args, mp); mp.clear()},
+            Commands::Clear => {exec_clear(); mp.clear()},
+            Commands::History => {exec_history(cmd, args, mp); mp.clear()},
+            Commands::Ls => {exec_ls(cmd, args, mp); mp.clear()},
             _ => println!("Command {:?} not implemented yet", cmd),
         }
     }
