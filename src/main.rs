@@ -28,6 +28,7 @@ fn main() -> rustyline::Result<()> {
             }
             Err(ReadlineError::Interrupted) => {
                 println!("^C");
+                clear_terminal() ;
                 break;
             }
             Err(ReadlineError::Eof) => {
@@ -65,6 +66,8 @@ fn main() -> rustyline::Result<()> {
         }
         // println!("{:?}", b);
     }
+
+    clear_terminal() ;
     
     Ok(())
 }

@@ -26,9 +26,8 @@ pub fn exec_ls(
     match mp.get(&cmd) {
         Some(flags) => {
             if flags.contains('a') {
-                folders.insert(0, String::from(".."));
-                folders.insert(0, String::from("."));
                 hidden = true;
+                default_ls(files.clone(), folders.clone(), hidden);
             }
             if flags.contains('l') {
                 // println!("long format");
@@ -39,16 +38,6 @@ pub fn exec_ls(
             // println!("default");
         }
     }
-
-    // println!();
-    // println!();
-    // println!();
-    // println!("{:?}  --- ++++ ", folders);
-    // println!();
-    // println!();
-    // println!();
-    // println!();
-    // println!("{:?}  --- ++++ ", files);
 }
 
 pub fn handle_files_folders(
@@ -99,12 +88,10 @@ pub fn display_folders(folders: Vec<String>, cc: bool, hidden: bool) {
         let c = format!("./{}", i);
         let a = Path::new(&c);
         let mut aa: Vec<_> = read_dir(a).unwrap().collect();
-        let size = aa.len();
 
         if cc {
             println!("{i}:");
         }
-        let mut j = 0;
 
         if !hidden {
             aa.retain(|x| !x.as_ref().unwrap().file_name().to_string_lossy().starts_with("."));
@@ -117,8 +104,16 @@ pub fn display_folders(folders: Vec<String>, cc: bool, hidden: bool) {
             let name = ii.file_name();
             new_fold.push(name.to_string_lossy().to_string()) ;
         }
+        
+        if hidden {
+            new_fold.insert(0, String::from(".."));
+            new_fold.insert(0, String::from("."));
+        }
+        // println!("{:?}", new_fold) ;
         sort_fd(&mut new_fold);
-        display_files(new_fold, jj != folders.clone().len()-1) ;
+        // println!("{:?}  +++", new_fold) ;
+
+        display_files(new_fold, jj != folders.clone().len() -1 ) ;
         
         jj += 1;
     }
@@ -146,14 +141,13 @@ pub fn sort_fd(a: &mut Vec<String>) {
             //         check by time of last modification
             //     */
             // }
-            // println!("{:?} ---+++ {:?}", aa , bb) ;
             for k in 0..min(aa.len(), bb.len()) {
                 if aa[k] > bb[k] || (k == min(aa.len(), bb.len()) - 1 && aa.len() > bb.len()) {
                     let temp = a[i].clone();
                     a[i] = a[j].clone();
                     a[j] = temp;
                     break;
-                } else if aa[k] != bb[k] {
+                } else if aa[k] < bb[k] {
                     break ;
                 }
             }

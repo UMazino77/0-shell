@@ -1,46 +1,4 @@
 #V2
-history
-clear
-echo " " " l\n ll\n lll\n "\n
-history
-echo """l\nll\nlll\n"\n
-history
-clear
-echo """l\nll\nlll\n"\n
-echo " " "llllll"
-clear
-echo " " "l\nll\nlll\n"\n
-history
-echo " " "\nl\nll\nlll\n"
-history
-echo " " "\nl\nll\nlll\n"
-echo " " "
-echo " " "\nl\nll\nlll\n"
-echo " " "\n\ncle\n\n\n\n"
-cle
-clear
-echo " " "\nl\nl\nl\n\nexir\n"
-clear
-echo " " "\n"
-clear
-echo " " "\ndquote> l\ndquote> ll\ndquote> lll\ndquote> "
-exit
-echo " " "\nl\nll\nlll\n\n"
-clear
-echo " " "\nl\nll\nlll\n"
-history
-" " "
-clear
-echo " " "
-clear
-echo " " "\nl\nll\nlll\n"
-clear
-ls
-clear
-echo "escaped \\"quote\\""
-echo "escaped \\"quote\\"" 
-echo "escaped \\\\"quote\\\\""
-.replace("\\"\\"", "")
 echo "escaped \\\\"quote\\\\""
 echo "escaped \\"quote\\""
 echo "Mix 'of' \\"both\\" types"
@@ -99,3 +57,45 @@ clear
 ls Cargo.toml Cargo.lock src target
 clear
 ls Cargo.toml Cargo.lock src target
+ls -a target
+clear
+ls src
+ls -a src
+clear
+ls -a src
+clear
+ls src
+ls -a src
+clear
+ls src
+ls cargo.toml src
+ls Cargo.toml src
+clear
+ls -a src
+clear
+ls
+ls .
+clear
+ls
+ls .
+clear
+ls .
+clear
+ls src
+clear
+ls src
+ls -a src
+clear
+ls target
+ls target -a
+clear
+ls -a target
+clear
+ls -a target
+clear
+ls -a target
+clear
+exi
+exit
+clear
+ls -a src
