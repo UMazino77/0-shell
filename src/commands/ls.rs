@@ -2,6 +2,8 @@ use crate::zero::*;
 use crate::zero::Commands;
 use std::path::Path;
 use std::fs::*;
+use std::os::unix::fs::MetadataExt;
+use std::path::PathBuf;
 
 pub fn exec_ls(
     cmd: Commands,
@@ -31,10 +33,11 @@ pub fn exec_ls(
         Some(flags) => {
             if flags.contains('a') {
                 hidden = true;
-                default_ls(files.clone(), folders.clone(), hidden);
             }
             if flags.contains('l') {
-                // println!("long format");
+                long_ls(files.clone(), folders.clone(), hidden);
+            } else {
+                default_ls(files.clone(), folders.clone(), hidden);
             }
         }
         None => {
@@ -50,8 +53,7 @@ pub fn handle_files_folders(
     args: &mut Vec<String>
 ) {
     for i in args {
-        let fd_name = format!("./{}", i);
-        let path = Path::new(&fd_name);
+        let path = crate_path(i.clone()) ;
         if !path.exists() {
             println!("ls: cannot access '{}': No such file or directory", i);
             continue;
@@ -67,6 +69,11 @@ pub fn handle_files_folders(
 pub fn default_ls(files: Vec<String>, folders: Vec<String>, hidden: bool) {
     display_files(files.clone(), folders.len() > 1);
     display_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden);
+}
+
+pub fn long_ls(files: Vec<String>, folders: Vec<String>, hidden: bool) {
+    display_long_files(files.clone(), folders.len() > 1);
+    // display_long_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden);
 }
 
 pub fn display_files(files: Vec<String>, cc: bool) {
@@ -86,11 +93,29 @@ pub fn display_files(files: Vec<String>, cc: bool) {
     }
 }
 
+pub fn display_long_files(files: Vec<String>, cc: bool) {
+    for (index, file) in files.iter().enumerate() {
+        let path = crate_path(file.clone()) ;
+        
+        if let Ok(metadata) = path.metadata() {
+            let perms = metadata.mode();
+            println!("{}", perms);
+        }
+
+        println!("++++++");
+
+        if index == files.len() - 1 && cc {
+            println!();
+        } else {
+            println!("{}  ", file);
+        }
+    }
+}
+
 pub fn display_folders(folders: Vec<String>, cc: bool, hidden: bool) {
     let mut jj = 0;
     for i in &folders {
-        let c = format!("./{}", i);
-        let a = Path::new(&c);
+        let a = crate_path(i.clone()) ;
         let mut aa: Vec<_> = read_dir(a).unwrap().collect();
 
         if cc {
@@ -156,6 +181,14 @@ pub fn sort_fd(a: &mut Vec<String>) {
                 }
             }
         }
+    }
+}
+
+pub fn crate_path(a : String) -> PathBuf {
+    if a.starts_with("/") {
+        PathBuf::from(a)
+    } else {
+        PathBuf::from(format!("./{}", a))
     }
 }
 

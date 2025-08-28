@@ -1,29 +1,4 @@
 #V2
-ls
-ls -l
-ls -lF
-ls -alF
-ls lalf
-ls alf
-ls -a
-ls -al
-ls -a
-ls a
-ls al
-ls alf
-ls -alf
-clear
-cle
-clear
-ls Cargo.lock Cargo.toml
-ls Cargo.toml Cargo.lock
-clear
-ls Cargo.toml cargo.tomlll
-clear
-ls cargo.tomlll Cargo.toml
-clear
-ls cargo.tomlll Cargo.toml
-clear
 ls Cargo.toml Cargo.lock src target
 clear
 ls Cargo.toml Cargo.lock src target
@@ -99,3 +74,28 @@ clear
 ls -a
 ls
 ls -a
+clear
+ls -l Cargo.toml
+ls -l src
+ls -l Cargo.toml
+ls Cargo.toml
+ls Cargo.toml -l
+ls -l Cargo.toml
+clear
+ls -l Cargo.toml
+ls -l /dev/zero
+clear
+ls -l /dev/zero
+cle
+clear
+ls -l /dev/zero
+cle
+clear
+ls -l Cargo.toml
+ls -l /dev/zero
+clear
+ls -l src
+clear
+ls -l cargo.toml
+ls -l Cargo.toml
+clear
