@@ -1,19 +1,4 @@
 #V2
-ls Cargo.toml Cargo.lock src target
-clear
-ls Cargo.toml Cargo.lock src target
-clear
-ls Cargo.toml Cargo.lock src target
-clear
-ls Cargo.toml Cargo.lock src target
-clear
-ls target.txt src.txt
-ls src.txt target.txt
-clear
-ls src.txt target.txt
-cle
-clear
-ls src.txt target.txt
 ls target.txt src.txt 
 clear
 ls Cargo.toml Cargo.lock src target
@@ -98,4 +83,19 @@ ls -l src
 clear
 ls -l cargo.toml
 ls -l Cargo.toml
+clear
+ls -F
+clear
+ls -F src
+ls -F .
+clear
+ls -F src
+clear
+ls -F /dev
+clear
+ls -F /dev
+clear
+ls -F /dev
+clear
+ls -F /dev
 clear

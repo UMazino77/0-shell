@@ -6,7 +6,7 @@ use shell::commands::echo::exec_echo;
 fn main() -> rustyline::Result<()> {
     let mut rl = Editor::<(),_>::new()?;
     let _ = rl.load_history("0shell_history.txt");
-    
+    clear_terminal() ;
     let mut mp = HashMap::new();
     loop {
         let mut path = std::env::current_dir().unwrap().to_str().unwrap().to_string();
