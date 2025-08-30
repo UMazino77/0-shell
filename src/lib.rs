@@ -66,7 +66,7 @@ pub mod zero {
                     println!("Error executing rm: {}", e);
                 }
             }
-            Commands::Cd => {exec_cd(cmd, args, mp); mp.clear()},
+            Commands::Cd => exec_cd(cmd, args, mp),
             Commands::Mv => {exec_mv(cmd, args, mp); mp.clear()},
             Commands::Pwd => {exec_pwd(cmd, args); mp.clear()},
             Commands::Mkdir => {exec_mkdir(cmd, args, mp); mp.clear()},

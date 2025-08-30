@@ -1,6 +1,5 @@
 use crate::zero::*;
 use crate::zero::Commands;
-use std::path::Path;
 use std::fs::*;
 use std::os::unix::fs::*;
 use std::path::PathBuf;
@@ -39,7 +38,7 @@ pub fn exec_ls(
                 dash = true;
             }
             if flags.contains('l') {
-                // long_ls(files.clone(), folders.clone(), hidden, dash);
+                long_ls(files.clone(), folders.clone(), hidden);
             } else {
                 default_ls(files.clone(), folders.clone(), hidden, dash);
             }
@@ -57,11 +56,13 @@ pub fn handle_files_folders(
     args: &mut Vec<String>
 ) {
     for i in args {
+
         let path = crate_path(i.clone());
         if !path.exists() {
             println!("ls: cannot access '{}': No such file or directory", i);
             continue;
         }
+
         if path.is_dir() {
             folders.push(i.clone());
         } else {
@@ -75,10 +76,10 @@ pub fn default_ls(files: Vec<String>, folders: Vec<String>, hidden: bool, dash :
     display_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden, dash);
 }
 
-// pub fn long_ls(files: Vec<String>, folders: Vec<String>, hidden: bool) {
-//     display_long_files(files.clone(), folders.len() > 1);
-//     // display_long_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden);
-// }
+pub fn long_ls(files: Vec<String>, folders: Vec<String>, _hidden: bool) {
+    display_long_files(files.clone(), folders.len() > 1);
+    // display_long_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden);
+}
 
 pub fn display_files(parent : String ,files: Vec<String>, cc: bool, dash: bool) {
     // let ter_width = todo!() ;
@@ -98,25 +99,6 @@ pub fn display_files(parent : String ,files: Vec<String>, cc: bool, dash: bool) 
             print!("{}{ff}  ", i.clone());
         }
         j += 1;
-    }
-}
-
-pub fn display_long_files(files: Vec<String>, cc: bool) {
-    for (index, file) in files.iter().enumerate() {
-        let path = crate_path(file.clone());
-
-        if let Ok(metadata) = path.metadata() {
-            let perms = metadata.mode();
-            println!("{}", perms);
-        }
-
-        println!("++++++");
-
-        if index == files.len() - 1 && cc {
-            println!();
-        } else {
-            println!("{}  ", file);
-        }
     }
 }
 
@@ -243,3 +225,24 @@ pub fn dash_f(path: PathBuf, dash: bool) -> String {
     }
     String::new()
 }
+
+pub fn display_long_files(files: Vec<String>, cc: bool) {
+    for (index, file) in files.iter().enumerate() {
+        let path = crate_path(file.clone());
+
+        
+        if let Ok(metadata) = path.metadata() {
+            let perms = metadata.mode();
+            println!("{}", perms);
+        }
+
+        println!("++++++");
+
+        if index == files.len() - 1 && cc {
+            println!();
+        } else {
+            println!("{}  ", file);
+        }
+    }
+}
+

@@ -1,51 +1,60 @@
 use shell::zero::*;
 use std::collections::HashMap;
-use rustyline::{Editor, error::ReadlineError};
+use rustyline::{ Editor, error::ReadlineError };
 use shell::commands::echo::exec_echo;
 
 fn main() -> rustyline::Result<()> {
-    let mut rl = Editor::<(),_>::new()?;
-    let _ = rl.load_history("0shell_history.txt");
-    clear_terminal() ;
+    let mut rl = Editor::<(), _>::new()?;
+    let user = whoami::username();
+    let his_path = format!("/home/{}/.zero-history.txt", user);
+    let _ = rl.load_history(&his_path);
+    // clear_terminal() ;
     let mut mp = HashMap::new();
     loop {
         let mut path = std::env::current_dir().unwrap().to_str().unwrap().to_string();
-        let user = whoami::username();
-        path  = path.replace(&("/home/".to_owned() + &user), "~");
-        
+        path = path.replace(&("/home/".to_owned() + &user), "~");
+
         let ar = match rl.readline(&format!("{} $ ", path)) {
             Ok(mut line) => {
-                let aaa  = line.trim().split_whitespace().collect::<Vec<&str>>();
+                let aaa = line.trim().split_whitespace().collect::<Vec<&str>>();
                 if aaa[0] == "echo" {
                     exec_echo(Commands::Echo, &mut line, &mut mp);
                     mp.clear();
                 }
-               if !line.contains("history") {
-                   let _ = rl.add_history_entry(line.as_str());
-                   let _ = rl.append_history("history.txt");
-               }
-               line
+                if !line.contains("history") {
+                    let _ = rl.add_history_entry(line.as_str());
+                    let _ = rl.append_history(&his_path);
+                }
+                line
             }
             Err(ReadlineError::Interrupted) => {
                 println!("^C");
-                clear_terminal() ;
+                clear_terminal();
                 break;
             }
             Err(ReadlineError::Eof) => {
                 println!("^D");
                 break;
             }
-            Err(_) => continue,
+            Err(_) => {
+                continue;
+            }
         };
-        
-        let args: Vec<&str> = ar.trim().split(|x:char| x == ';').collect();
+
+        let args: Vec<&str> = ar
+            .trim()
+            .split(|x: char| x == ';')
+            .collect();
         if args.len() < 1 {
             println!("Usage: <command> [args...]");
             // std::process::exit(1);
         }
         let mut b: Vec<Vec<String>> = Vec::new();
         for i in args.iter() {
-            let a = i.split_whitespace().map(|x| x.to_string()).collect();
+            let a: Vec<_> = i
+                .split_whitespace()
+                .map(|x| x.to_string().replace("~", &format!("/home/{}", user)))
+                .collect();
             b.push(a);
         }
         for j in b.iter_mut() {
@@ -67,7 +76,7 @@ fn main() -> rustyline::Result<()> {
         // println!("{:?}", b);
     }
 
-    clear_terminal() ;
-    
+    clear_terminal();
+
     Ok(())
 }
