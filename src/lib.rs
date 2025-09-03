@@ -72,7 +72,7 @@ pub mod zero {
             Commands::Mkdir => {exec_mkdir(cmd, args, mp); mp.clear()},
             Commands::Cp => {exec_cp(cmd, args, mp); mp.clear()},
             Commands::Exit => {exec_exit(args); mp.clear()},
-            Commands::Cat => {exec_cat(cmd, args, mp); mp.clear()},
+            Commands::Cat => {let _ = exec_cat(cmd, args, mp); mp.clear()},
             Commands::Clear => {exec_clear(); mp.clear()},
             Commands::History => {exec_history(cmd, args, mp); mp.clear()},
             Commands::Ls => {exec_ls(cmd, args, mp); mp.clear()},

@@ -21,19 +21,13 @@ fn main() -> rustyline::Result<()> {
                     exec_echo(Commands::Echo, &mut line, &mut mp);
                     mp.clear();
                 }
-                if !line.contains("history") {
                     let _ = rl.add_history_entry(line.as_str());
                     let _ = rl.append_history(&his_path);
-                }
                 line
             }
             Err(ReadlineError::Interrupted) => {
                 println!("^C");
                 clear_terminal();
-                break;
-            }
-            Err(ReadlineError::Eof) => {
-                println!("^D");
                 break;
             }
             Err(_) => {
