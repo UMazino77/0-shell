@@ -2,7 +2,10 @@ use crate::zero::*;
 use crate::zero::Commands;
 use std::fs::*;
 use std::os::unix::fs::*;
-use std::path::PathBuf;
+use std::path::*;
+use std::ffi::CString;
+use std::os::unix::ffi::OsStrExt;
+use users::{get_user_by_uid, get_group_by_gid};
 
 pub fn exec_ls(
     cmd: Commands,
@@ -38,7 +41,7 @@ pub fn exec_ls(
                 dash = true;
             }
             if flags.contains('l') {
-                long_ls(files.clone(), folders.clone(), hidden);
+                long_ls(files.clone(), folders.clone(), hidden,dash);
             } else {
                 default_ls(files.clone(), folders.clone(), hidden, dash);
             }
@@ -57,7 +60,7 @@ pub fn handle_files_folders(
 ) {
     for i in args {
 
-        let path = crate_path(i.clone());
+        let path = create_path(i.clone());
         if !path.exists() {
             println!("ls: cannot access '{}': No such file or directory", i);
             continue;
@@ -72,13 +75,13 @@ pub fn handle_files_folders(
 }
 
 pub fn default_ls(files: Vec<String>, folders: Vec<String>, hidden: bool, dash : bool) {
-    display_files(String::from("."), files.clone(), folders.len() > 1, dash);
+    display_files(String::from("."), files.clone(), folders.len() > 0, dash);
     display_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden, dash);
 }
 
-pub fn long_ls(files: Vec<String>, folders: Vec<String>, _hidden: bool) {
-    display_long_files(files.clone(), folders.len() > 1);
-    // display_long_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden);
+pub fn long_ls(files: Vec<String>, folders: Vec<String>, hidden: bool,dash : bool) {
+    display_long_files(String::from("."),files.clone(), folders.len() > 0,dash);
+    display_long_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden, dash);
 }
 
 pub fn display_files(parent : String ,files: Vec<String>, cc: bool, dash: bool) {
@@ -87,7 +90,7 @@ pub fn display_files(parent : String ,files: Vec<String>, cc: bool, dash: bool) 
     let mut j = 0;
     for i in &files {
 
-        let path = crate_path(format!("{}/{}",parent, i));
+        let path = create_path(format!("{}/{}",parent, i));
         let ff = dash_f(path, dash) ;
 
         if j == files.len() - 1 {
@@ -105,13 +108,12 @@ pub fn display_files(parent : String ,files: Vec<String>, cc: bool, dash: bool) 
 pub fn display_folders(folders: Vec<String>, cc: bool, hidden: bool, dash : bool) {
     let mut jj = 0;
     for i in &folders {
-        let a = crate_path(i.clone());
+        let a = create_path(i.clone());
         let mut aa: Vec<_> = read_dir(a).unwrap().collect();
 
         if cc {
             println!("{i}:");
         }
-
         if !hidden {
             aa.retain(|x| !x.as_ref().unwrap().file_name().to_string_lossy().starts_with("."));
         }
@@ -174,7 +176,7 @@ pub fn sort_fd(a: &mut Vec<String>) {
     }
 }
 
-pub fn crate_path(a: String) -> PathBuf {
+pub fn create_path(a: String) -> PathBuf {
     if a.starts_with("/") { PathBuf::from(a) } else { PathBuf::from(format!("./{}", a)) }
 }
 
@@ -226,23 +228,157 @@ pub fn dash_f(path: PathBuf, dash: bool) -> String {
     String::new()
 }
 
-pub fn display_long_files(files: Vec<String>, cc: bool) {
+pub fn display_long_files(parent : String , files: Vec<String>, cc: bool,dash : bool) {
     for (index, file) in files.iter().enumerate() {
-        let path = crate_path(file.clone());
+        let path = create_path(format!("{}/{}",parent, file));
+
+        let Ok(metadata) = path.symlink_metadata() else {
+            continue ;
+        };
+
+        let perms = permissions(path.clone()) ;
+
+        let uid = metadata.uid();
+        let gid = metadata.gid();
+        // println!("++++++");
+        let username = get_user_by_uid(uid)
+            .map(|u| u.name().to_string_lossy().to_string())
+            .unwrap_or_else(|| uid.to_string());
+            
+        let groupname = get_group_by_gid(gid)
+            .map(|g| g.name().to_string_lossy().to_string())
+            .unwrap_or_else(|| gid.to_string());
 
         
-        if let Ok(metadata) = path.metadata() {
-            let perms = metadata.mode();
-            println!("{}", perms);
-        }
 
-        println!("++++++");
+        let size = metadata.size();
 
-        if index == files.len() - 1 && cc {
+        let d = dash_f(path.clone(), dash) ;
+
+        println!("{perms} {username} {groupname} {size} {}{d}", file.clone());
+
+        if cc && index != files.len() -1 {
             println!();
-        } else {
-            println!("{}  ", file);
         }
     }
 }
 
+
+pub fn permissions(path: PathBuf) -> String {
+    let Ok(metadata) = path.symlink_metadata() else {
+        return String::from("---------");
+    };
+    
+    let mode = metadata.mode();
+    let file_type = metadata.file_type();
+    
+    let type_char = if file_type.is_dir() {
+        'd'
+    } else if file_type.is_symlink() {
+        'l'
+    } else if file_type.is_fifo() {
+        'p'
+    } else if file_type.is_socket() {
+        's'
+    } else if file_type.is_char_device() {
+        'c'
+    } else if file_type.is_block_device() {
+        'b'
+    } else {
+        '-'
+    };
+
+    let acl = if has_acl(&path) {String::from("+")} else {String::new()} ;
+    
+    let owner_r = if mode & 0o400 != 0 { 'r' } else { '-' };
+    let owner_w = if mode & 0o200 != 0 { 'w' } else { '-' };
+    let owner_x = match (mode & 0o100 != 0, mode & 0o4000 != 0) {
+        (true, true) => 's',   
+        (false, true) => 'S',  
+        (true, false) => 'x',  
+        (false, false) => '-', 
+    };
+    
+    
+    let group_r = if mode & 0o040 != 0 { 'r' } else { '-' };
+    let group_w = if mode & 0o020 != 0 { 'w' } else { '-' };
+    let group_x = match (mode & 0o010 != 0, mode & 0o2000 != 0) {
+        (true, true) => 's',   
+        (false, true) => 'S', 
+        (true, false) => 'x', 
+        (false, false) => '-',
+    };
+    
+    let other_r = if mode & 0o004 != 0 { 'r' } else { '-' };
+    let other_w = if mode & 0o002 != 0 { 'w' } else { '-' };
+    let other_x = match (mode & 0o001 != 0, mode & 0o1000 != 0) {
+        (true, true) => 't',  
+        (false, true) => 'T',  
+        (true, false) => 'x', 
+        (false, false) => '-', 
+    };
+    
+    format!("{}{}{}{}{}{}{}{}{}{}{acl}", 
+        type_char, owner_r, owner_w, owner_x, 
+        group_r, group_w, group_x, 
+        other_r, other_w, other_x)
+}
+
+fn has_acl(path: &Path) -> bool {
+    let path_cstr = match CString::new(path.as_os_str().as_bytes()) {
+        Ok(cstr) => cstr,
+        Err(_) => return false,
+    };
+    
+    unsafe {
+        let result = libc::getxattr(
+            path_cstr.as_ptr(),
+            b"system.posix_acl_access\0".as_ptr() as *const i8,
+            std::ptr::null_mut(),
+            0,
+        );
+        result > 0
+    }
+}
+
+pub fn display_long_folders(folders: Vec<String>, cc: bool, hidden: bool, dash : bool) {
+    let mut jj = 0;
+    for i in &folders {
+        let a = create_path(i.clone());
+
+        let Ok(metadata) = a.symlink_metadata() else {
+            continue ;
+        };
+
+        let mut aa: Vec<_> = read_dir(a).unwrap().collect();
+
+        if cc {
+            println!("{i}:");
+        }
+        println!("total {}", metadata.blocks());
+
+        if !hidden {
+            aa.retain(|x| !x.as_ref().unwrap().file_name().to_string_lossy().starts_with("."));
+        }
+
+        let mut new_fold = vec![];
+
+        for i in &aa {
+            let ii = i.as_ref().unwrap();
+            let name = ii.file_name();
+            new_fold.push(name.to_string_lossy().to_string());
+        }
+
+        if hidden {
+            new_fold.insert(0, String::from(".."));
+            new_fold.insert(0, String::from("."));
+        }
+        // println!("{:?}", new_fold) ;
+        sort_fd(&mut new_fold);
+        // println!("{:?}  +++", new_fold) ;
+
+        display_long_files(i.to_string(), new_fold, jj != folders.clone().len() - 1,dash);
+
+        jj += 1;
+    }
+}
