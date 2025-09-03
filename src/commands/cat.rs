@@ -41,7 +41,7 @@ pub fn exec_cat(
     let file_name = &args[0];
     let path = std::path::Path::new(file_name);
     if !path.exists() {
-        eprintln!("cat: {}: No such file or directory", file_name);
+        eprintln!("cat: '{}': No such file or directory", file_name);
         return Ok(());
     }
     if path.is_dir() {
