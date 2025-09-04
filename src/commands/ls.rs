@@ -240,6 +240,8 @@ pub fn display_long_files(parent : String , files: Vec<String>, cc: bool,dash : 
 
         let uid = metadata.uid();
         let gid = metadata.gid();
+
+        let links = metadata.nlink();
         // println!("++++++");
         let username = get_user_by_uid(uid)
             .map(|u| u.name().to_string_lossy().to_string())
@@ -255,14 +257,28 @@ pub fn display_long_files(parent : String , files: Vec<String>, cc: bool,dash : 
 
         let d = dash_f(path.clone(), dash) ;
 
-        println!("{perms} {username} {groupname} {size} {}{d}", file.clone());
+        if let Some(target) = read_link_target(&path) {
+            println!("{perms} {links} {username} {groupname} {size} {}{d} -> {target}", file.clone());
+        } else {
+            println!("{perms} {links} {username} {groupname} {size} {}{d}", file.clone());
+        }
 
-        if cc && index != files.len() -1 {
+        if cc && index == files.len() -1 {
             println!();
         }
     }
 }
 
+pub fn read_link_target(path: &PathBuf) -> Option<String> {
+    if let Ok(metadata) = path.symlink_metadata() {
+        if metadata.file_type().is_symlink() {
+            if let Ok(target) = path.read_link() {
+                return Some(target.to_string_lossy().to_string());
+            }
+        }
+    }
+    None
+}
 
 pub fn permissions(path: PathBuf) -> String {
     let Ok(metadata) = path.symlink_metadata() else {
@@ -346,20 +362,35 @@ pub fn display_long_folders(folders: Vec<String>, cc: bool, hidden: bool, dash :
     for i in &folders {
         let a = create_path(i.clone());
 
-        let Ok(metadata) = a.symlink_metadata() else {
+        let Ok(aaa) = read_dir(&a) else {
             continue ;
         };
 
-        let mut aa: Vec<_> = read_dir(a).unwrap().collect();
+        let mut aa: Vec<_> = aaa.collect();
+
+        let mut total = 0 ;
+
+        if !hidden {
+            aa.retain(|x| !x.as_ref().unwrap().file_name().to_string_lossy().starts_with("."));
+            total += total_blocks(&aa) ;
+        } else {
+            total += total_blocks(&aa);
+            if let Ok(current_metadata) = a.metadata() {
+                total += current_metadata.blocks()/2;
+                println!("sss");
+            }
+            
+            let parent_path = create_path(format!("{}/..", i.clone()));
+            if let Ok(parent_metadata) = parent_path.metadata() {
+                total += parent_metadata.blocks()/2;
+                println!("ttt");
+            }
+        }
 
         if cc {
             println!("{i}:");
         }
-        println!("total {}", metadata.blocks());
-
-        if !hidden {
-            aa.retain(|x| !x.as_ref().unwrap().file_name().to_string_lossy().starts_with("."));
-        }
+        println!("total {}", total);
 
         let mut new_fold = vec![];
 
@@ -381,4 +412,18 @@ pub fn display_long_folders(folders: Vec<String>, cc: bool, hidden: bool, dash :
 
         jj += 1;
     }
+}
+
+pub fn total_blocks(aa: &Vec<Result<DirEntry, std::io::Error>>) -> u64 {
+    let mut total = 0u64;
+    
+    for a in aa {
+        if let Ok(i) = a {
+            if let Ok(metadata) = i.metadata() {
+                total += metadata.blocks();
+            }
+        }
+    }
+    
+    total/2
 }
