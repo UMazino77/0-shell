@@ -22,7 +22,10 @@ fn main() -> rustyline::Result<()> {
             }
             Err(ReadlineError::Interrupted) => {
                 println!("^C");
-                clear_terminal();
+                break;
+            }
+            Err(ReadlineError::Eof) => {
+                // clear_terminal();
                 break;
             }
             Err(_) => {
@@ -80,20 +83,18 @@ fn main() -> rustyline::Result<()> {
 
             match Commands::from_str(&j[0]) {
                 Some(Commands::Echo) => {
-                    exec_echo(Commands::Echo, &j[1..], &mut mp);
+                    exec_echo(Commands::Echo, &mut j[1..].to_owned(), &mut mp);
                 }
                 Some(cmd) => {
                     execute(cmd, &mut j[1..].to_owned(), &mut mp);
                 }
                 None => {
-                    println!("Unknown command: {}", j[0]);
+                    println!("Command '{}' not found", j[0]);
                 }
             }
         }
-        mp.clear();
     }
 
-    clear_terminal();
     Ok(())
 }
 
