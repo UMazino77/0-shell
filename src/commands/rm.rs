@@ -11,14 +11,11 @@ pub fn exec_rm(
     detect_flags(cmd.clone(), args, mp);
 
     for i in args {
-        if i.starts_with('-') {
-            continue;
-        }
-
         let path_str = format!("./{}", i);
+
         let path = Path::new(&path_str);
 
-        if !path.exists() {
+        if path.symlink_metadata().is_err() {
             println!("rm: cannot remove '{}': No such file or directory", i);
             continue;
         }
@@ -27,16 +24,16 @@ pub fn exec_rm(
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid flags"));
         }
 
-        let metadata = fs::metadata(path)?;
+        let metadata = path.symlink_metadata()?;
 
         if metadata.is_dir() {
+            // println!("{:?}  ++++++   {:?}", metadata.file_type(), mp);
             if mp.contains_key(&cmd) && mp.get(&cmd) == Some(&"r".to_string()) {
                 fs::remove_dir_all(path)?;
             } else {
-                
                 println!("rm: cannot remove '{}': Is a directory", i);
             }
-        } else if metadata.is_file() {
+        } else {
             fs::remove_file(path)?;
         }
     }

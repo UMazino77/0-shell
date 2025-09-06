@@ -1,11 +1,10 @@
+use std::env::current_dir;
+use crate::zero::*;
+
 pub fn exec_pwd(
-    _cmd: crate::zero::Commands,
-    args: &mut Vec<String>,
+    _cmd: Commands,
+    _args: &mut Vec<String>,
 ) {
-    if args.len() > 0 {
-        println!("pwd: too many arguments");
-        return;
-    }
-    let current_dir = std::env::current_dir().unwrap();
+    let current_dir = current_dir().unwrap();
     println!("{}", current_dir.display());
 }

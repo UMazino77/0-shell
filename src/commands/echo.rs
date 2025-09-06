@@ -17,5 +17,5 @@ pub fn exec_echo(
     }
 
     let output = args.join(" ");
-    println!("{}", output);
+    println!("{}", output.replace("'$'\\n", "\n"));
 }
