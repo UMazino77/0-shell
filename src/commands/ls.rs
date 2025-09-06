@@ -5,7 +5,10 @@ use std::os::unix::fs::*;
 use std::path::*;
 use std::ffi::CString;
 use std::os::unix::ffi::OsStrExt;
-use users::{get_user_by_uid, get_group_by_gid};
+use users::{ get_user_by_uid, get_group_by_gid };
+use chrono::*;
+use chrono_tz::Africa::Casablanca;
+use std::cmp::Ordering;
 
 pub fn exec_ls(
     cmd: Commands,
@@ -23,9 +26,11 @@ pub fn exec_ls(
     let mut hidden = false;
     let mut files = Vec::new();
     let mut folders = Vec::new();
-    let mut dash = false ;
+    let mut dash = false;
 
     handle_files_folders(&mut files, &mut folders, args);
+
+    // println!("{}   {}", files.len(), folders.len());
 
     sort_fd(&mut files);
     sort_fd(&mut folders);
@@ -41,7 +46,7 @@ pub fn exec_ls(
                 dash = true;
             }
             if flags.contains('l') {
-                long_ls(files.clone(), folders.clone(), hidden,dash);
+                long_ls(files.clone(), folders.clone(), hidden, dash);
             } else {
                 default_ls(files.clone(), folders.clone(), hidden, dash);
             }
@@ -59,56 +64,65 @@ pub fn handle_files_folders(
     args: &mut Vec<String>
 ) {
     for i in args {
-
-        let path = create_path(i.clone());
-        if !path.exists() {
-            println!("ls: cannot access '{}': No such file or directory", i);
-            continue;
-        }
-
-        if path.is_dir() {
-            folders.push(i.clone());
-        } else {
-            files.push(i.clone());
+        let path = create_path(String::from("."), i.clone());
+        
+        match path.symlink_metadata() {
+            Ok(metadata) => {
+                if metadata.file_type().is_symlink() {
+                    if path.exists() && path.is_dir() {
+                        folders.push(i.clone());
+                    } else {
+                        println!("ls: cannot read symbolic link '{}': Permission denied", i);
+                        files.push(i.clone());
+                    }
+                } else if metadata.is_dir() {
+                    folders.push(i.clone());
+                } else {
+                    files.push(i.clone());
+                }
+            }
+            Err(_) => {
+                println!("ls: cannot access '{}': No such file or directory", i);
+                continue;
+            }
         }
     }
 }
 
-pub fn default_ls(files: Vec<String>, folders: Vec<String>, hidden: bool, dash : bool) {
+pub fn default_ls(files: Vec<String>, folders: Vec<String>, hidden: bool, dash: bool) {
     display_files(String::from("."), files.clone(), folders.len() > 0, dash);
     display_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden, dash);
 }
 
-pub fn long_ls(files: Vec<String>, folders: Vec<String>, hidden: bool,dash : bool) {
-    display_long_files(String::from("."),files.clone(), folders.len() > 0,dash);
+pub fn long_ls(files: Vec<String>, folders: Vec<String>, hidden: bool, dash: bool) {
+    display_long_files(String::from("."), files.clone(), folders.len() > 0, dash);
     display_long_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden, dash);
 }
 
-pub fn display_files(parent : String ,files: Vec<String>, cc: bool, dash: bool) {
+pub fn display_files(parent: String, files: Vec<String>, cc: bool, dash: bool) {
     // let ter_width = todo!() ;
     // let max = ter_width
     let mut j = 0;
     for i in &files {
-
-        let path = create_path(format!("{}/{}",parent, i));
-        let ff = dash_f(path, dash) ;
+        let path = create_path(parent.clone(), i.clone());
+        let ff = dash_f(path.clone(), dash);
 
         if j == files.len() - 1 {
-            println!("{i}{ff}");
+            println!("{}{ff}", color(i.clone(), &path, false));
             if cc {
                 println!();
             }
         } else {
-            print!("{}{ff}  ", i.clone());
+            print!("{}{ff}  ", color(i.clone(), &path, false));
         }
         j += 1;
     }
 }
 
-pub fn display_folders(folders: Vec<String>, cc: bool, hidden: bool, dash : bool) {
+pub fn display_folders(folders: Vec<String>, cc: bool, hidden: bool, dash: bool) {
     let mut jj = 0;
     for i in &folders {
-        let a = create_path(i.clone());
+        let a = create_path(String::from("."), i.clone());
         let mut aa: Vec<_> = read_dir(a).unwrap().collect();
 
         if cc {
@@ -134,50 +148,56 @@ pub fn display_folders(folders: Vec<String>, cc: bool, hidden: bool, dash : bool
         sort_fd(&mut new_fold);
         // println!("{:?}  +++", new_fold) ;
 
-        display_files(i.to_string(),new_fold, jj != folders.clone().len() - 1, dash);
+        display_files(i.to_string(), new_fold, jj != folders.clone().len() - 1, dash);
 
         jj += 1;
     }
 }
 
+
 pub fn sort_fd(a: &mut Vec<String>) {
-    for i in 0..a.len() {
-        for j in i + 1..a.len() {
-            let aa: Vec<_> = a[i]
-                .clone()
-                .to_ascii_lowercase()
-                .chars()
-                .into_iter()
-                .filter(|x| x.is_alphanumeric())
-                .collect();
-            let bb: Vec<_> = a[j]
-                .clone()
-                .to_ascii_lowercase()
-                .chars()
-                .into_iter()
-                .filter(|x| x.is_alphanumeric())
-                .collect();
-            // if aa == bb {
-            //     /*
-            //         check by time of last modification
-            //     */
-            // }
-            for k in 0..min(aa.len(), bb.len()) {
-                if aa[k] > bb[k] || (k == min(aa.len(), bb.len()) - 1 && aa.len() > bb.len()) {
-                    let temp = a[i].clone();
-                    a[i] = a[j].clone();
-                    a[j] = temp;
-                    break;
-                } else if aa[k] < bb[k] {
-                    break;
+    a.sort_by(|a, b| compare(a, b));
+}
+
+fn compare(a: &str, b: &str) -> Ordering {
+    let aa: String = a.chars().filter(|c| c.is_alphanumeric()).map(|c| c.to_ascii_lowercase()).collect();
+    let bb: String = b.chars().filter(|c| c.is_alphanumeric()).map(|c| c.to_ascii_lowercase()).collect();
+
+    match aa.cmp(&bb) {
+        Ordering::Equal => {
+            let aaa = a.to_lowercase();
+            let bbb = b.to_lowercase();
+
+            match aaa.cmp(&bbb) {
+                Ordering::Equal => {
+                    match count_lower(a).cmp(&count_lower(b)) {
+                        Ordering::Equal => {
+                            let a_modif = Path::new(a).metadata().and_then(|m| m.modified()).unwrap_or(std::time::UNIX_EPOCH);
+                            let b_modif = Path::new(b).metadata().and_then(|m| m.modified()).unwrap_or(std::time::UNIX_EPOCH);
+
+                            b_modif.cmp(&a_modif)
+                        }
+                        other => other.reverse(),
+                    }
                 }
+                other => other,
             }
         }
+        other => other,
     }
 }
 
-pub fn create_path(a: String) -> PathBuf {
-    if a.starts_with("/") { PathBuf::from(a) } else { PathBuf::from(format!("./{}", a)) }
+fn count_lower(s: &str) -> usize {
+    s.chars().filter(|c| c.is_lowercase()).count()
+}
+
+
+pub fn create_path(a: String, c : String) -> PathBuf {
+    if c.starts_with("/") {
+        PathBuf::from(c)
+    } else {
+        PathBuf::from(format!("{}/{}", a, c))
+    }
 }
 
 pub fn min(a: usize, b: usize) -> usize {
@@ -187,56 +207,67 @@ pub fn min(a: usize, b: usize) -> usize {
     b
 }
 
-
 pub fn dash_f(path: PathBuf, dash: bool) -> String {
     if !dash {
         return String::new();
     }
-    
+
     let Ok(metadata) = path.symlink_metadata() else {
         return String::from("?");
     };
-    
+
     let file_type = metadata.file_type();
-    
+
     if file_type.is_dir() {
         return String::from("/");
     }
-    
+
     if file_type.is_symlink() {
         return String::from("@");
     }
-    
+
     if file_type.is_file() {
         let permissions = metadata.permissions();
         let mode = permissions.mode();
-        
-        if mode & 0o111 != 0 {
+
+        if (mode & 0o111) != 0 {
             return String::from("*");
         }
-        
+
         return String::new();
     }
-    
+
     if file_type.is_fifo() {
         return String::from("|");
     }
-    
+
     if file_type.is_socket() {
         return String::from("=");
     }
     String::new()
 }
 
-pub fn display_long_files(parent : String , files: Vec<String>, cc: bool,dash : bool) {
-    for (index, file) in files.iter().enumerate() {
-        let path = create_path(format!("{}/{}",parent, file));
+pub fn display_long_files(parent: String, files: Vec<String>, cc: bool, dash: bool) {
+    let mut permissions_vec = Vec::new();
+    let mut links_vec = Vec::new();
+    let mut username_vec = Vec::new();
+    let mut groupname_vec = Vec::new();
+    let mut size_vec = Vec::new();
+    let mut mod_time_vec = Vec::new();
+    let mut major_vec = Vec::new();
+    let mut dashf = Vec::new();
+    let mut maj = false;
+
+    // println!("{:?}", files.clone());
+
+    for file in &files {
+        let path = create_path(parent.clone(), file.clone());
 
         let Ok(metadata) = path.symlink_metadata() else {
-            continue ;
+            continue;
         };
 
-        let perms = permissions(path.clone()) ;
+        let perms = permissions(path.clone());
 
         let uid = metadata.uid();
         let gid = metadata.gid();
@@ -246,24 +277,86 @@ pub fn display_long_files(parent : String , files: Vec<String>, cc: bool,dash : 
         let username = get_user_by_uid(uid)
             .map(|u| u.name().to_string_lossy().to_string())
             .unwrap_or_else(|| uid.to_string());
-            
+
         let groupname = get_group_by_gid(gid)
             .map(|g| g.name().to_string_lossy().to_string())
             .unwrap_or_else(|| gid.to_string());
 
-        
-
         let size = metadata.size();
 
-        let d = dash_f(path.clone(), dash) ;
+        let mod_time = format_time(&metadata.modified().unwrap_or(std::time::SystemTime::now()));
 
-        if let Some(target) = read_link_target(&path) {
-            println!("{perms} {links} {username} {groupname} {size} {}{d} -> {target}", file.clone());
+        let d = dash_f(path.clone(), dash);
+
+        dashf.push(d.clone());
+
+        permissions_vec.push(perms.clone());
+        links_vec.push(links.to_string());
+        username_vec.push(username.clone());
+        groupname_vec.push(groupname.clone());
+        size_vec.push(size.to_string());
+        mod_time_vec.push(mod_time.clone());
+
+        if metadata.file_type().is_char_device() || metadata.file_type().is_block_device() {
+            maj = true;
+            let rdev = metadata.rdev();
+            let major_num = (rdev >> 8) & 0xfff;
+            let minor_num = (rdev & 0xff) | ((rdev >> 12) & 0xfff00);
+            major_vec.push(format!("{},", major_num));
+            size_vec.pop();
+            size_vec.push(format!("{}", minor_num));
         } else {
-            println!("{perms} {links} {username} {groupname} {size} {}{d}", file.clone());
+            major_vec.push(String::from(""));
         }
+    }
 
-        if cc && index == files.len() -1 {
+    // println!("{}  {}   {}", permissions_vec.len(), major_vec.len(), size_vec.len());
+
+    let max_perms = permissions_vec.iter().map(|s| s.len()).max().unwrap_or(0);
+    let max_links = links_vec.iter().map(|s| s.len()).max().unwrap_or(0);
+    let max_username = username_vec.iter().map(|s| s.len()).max().unwrap_or(0);
+    let max_groupname = groupname_vec.iter().map(|s| s.len()).max().unwrap_or(0);
+    let max_size = size_vec.iter().map(|s| s.len()).max().unwrap_or(0);
+    let max_mod_time = mod_time_vec.iter().map(|s| s.len()).max().unwrap_or(0);
+    let max_major = major_vec.iter().map(|s| s.len()).max().unwrap_or(0);
+
+    for i in 0..files.len() {
+        let major_field = if i < major_vec.len() && !major_vec[i].is_empty() {
+            format!(" {:>max_major$}", major_vec[i])
+        } else if maj {
+            format!(" {:>max_major$}", "")
+        } else {
+            String::new()
+        };
+
+
+        print!(
+            "{:<max_perms$} {:>max_links$} {:<max_username$} {:<max_groupname$}{} {:>max_size$} {:<max_mod_time$} {}",
+            permissions_vec[i],
+            links_vec[i],
+            username_vec[i],
+            groupname_vec[i],
+            major_field,
+            size_vec[i],
+            mod_time_vec[i],
+            if quotes(files[i].clone()).1 {
+                color(quotes(files[i].clone()).0, &create_path(parent.clone(), files[i].clone()), false)
+            } else {
+                color(format!("{}", files[i].clone()), &create_path(parent.clone(), files[i].clone()), false)
+            },
+        );
+        let targett = read_link_target(&create_path(parent.clone(), files[i].clone()));
+        if let Some(target) = targett {
+            let target_dash = dash_f(create_path(parent.clone(), target.clone()), dash);
+            println!(
+                " -> {}{}",
+                color(target.clone(), &create_path(parent.clone(), target.clone()), true),
+                target_dash
+            );
+        } else {
+            println!("{}", dashf[i]);
+        }
+        if cc && i == files.len() - 1 {
             println!();
         }
     }
@@ -284,10 +377,10 @@ pub fn permissions(path: PathBuf) -> String {
     let Ok(metadata) = path.symlink_metadata() else {
         return String::from("---------");
     };
-    
+
     let mode = metadata.mode();
     let file_type = metadata.file_type();
-    
+
     let type_char = if file_type.is_dir() {
         'd'
     } else if file_type.is_symlink() {
@@ -304,86 +397,96 @@ pub fn permissions(path: PathBuf) -> String {
         '-'
     };
 
-    let acl = if has_acl(&path) {String::from("+")} else {String::new()} ;
-    
-    let owner_r = if mode & 0o400 != 0 { 'r' } else { '-' };
-    let owner_w = if mode & 0o200 != 0 { 'w' } else { '-' };
-    let owner_x = match (mode & 0o100 != 0, mode & 0o4000 != 0) {
-        (true, true) => 's',   
-        (false, true) => 'S',  
-        (true, false) => 'x',  
-        (false, false) => '-', 
-    };
-    
-    
-    let group_r = if mode & 0o040 != 0 { 'r' } else { '-' };
-    let group_w = if mode & 0o020 != 0 { 'w' } else { '-' };
-    let group_x = match (mode & 0o010 != 0, mode & 0o2000 != 0) {
-        (true, true) => 's',   
-        (false, true) => 'S', 
-        (true, false) => 'x', 
+    let acl = if has_acl(&path) { String::from("+") } else { String::new() };
+
+    let owner_r = if (mode & 0o400) != 0 { 'r' } else { '-' };
+    let owner_w = if (mode & 0o200) != 0 { 'w' } else { '-' };
+    let owner_x = match ((mode & 0o100) != 0, (mode & 0o4000) != 0) {
+        (true, true) => 's',
+        (false, true) => 'S',
+        (true, false) => 'x',
         (false, false) => '-',
     };
-    
-    let other_r = if mode & 0o004 != 0 { 'r' } else { '-' };
-    let other_w = if mode & 0o002 != 0 { 'w' } else { '-' };
-    let other_x = match (mode & 0o001 != 0, mode & 0o1000 != 0) {
-        (true, true) => 't',  
-        (false, true) => 'T',  
-        (true, false) => 'x', 
-        (false, false) => '-', 
+
+    let group_r = if (mode & 0o040) != 0 { 'r' } else { '-' };
+    let group_w = if (mode & 0o020) != 0 { 'w' } else { '-' };
+    let group_x = match ((mode & 0o010) != 0, (mode & 0o2000) != 0) {
+        (true, true) => 's',
+        (false, true) => 'S',
+        (true, false) => 'x',
+        (false, false) => '-',
     };
-    
-    format!("{}{}{}{}{}{}{}{}{}{}{acl}", 
-        type_char, owner_r, owner_w, owner_x, 
-        group_r, group_w, group_x, 
-        other_r, other_w, other_x)
+
+    let other_r = if (mode & 0o004) != 0 { 'r' } else { '-' };
+    let other_w = if (mode & 0o002) != 0 { 'w' } else { '-' };
+    let other_x = match ((mode & 0o001) != 0, (mode & 0o1000) != 0) {
+        (true, true) => 't',
+        (false, true) => 'T',
+        (true, false) => 'x',
+        (false, false) => '-',
+    };
+
+    format!(
+        "{}{}{}{}{}{}{}{}{}{}{acl}",
+        type_char,
+        owner_r,
+        owner_w,
+        owner_x,
+        group_r,
+        group_w,
+        group_x,
+        other_r,
+        other_w,
+        other_x
+    )
 }
 
 fn has_acl(path: &Path) -> bool {
     let path_cstr = match CString::new(path.as_os_str().as_bytes()) {
         Ok(cstr) => cstr,
-        Err(_) => return false,
+        Err(_) => {
+            return false;
+        }
     };
-    
+
     unsafe {
         let result = libc::getxattr(
             path_cstr.as_ptr(),
             b"system.posix_acl_access\0".as_ptr() as *const i8,
             std::ptr::null_mut(),
-            0,
+            0
         );
         result > 0
     }
 }
 
-pub fn display_long_folders(folders: Vec<String>, cc: bool, hidden: bool, dash : bool) {
+pub fn display_long_folders(folders: Vec<String>, cc: bool, hidden: bool, dash: bool) {
     let mut jj = 0;
     for i in &folders {
-        let a = create_path(i.clone());
+        let a = create_path(String::from("."), i.clone());
 
         let Ok(aaa) = read_dir(&a) else {
-            continue ;
+            continue;
         };
 
         let mut aa: Vec<_> = aaa.collect();
 
-        let mut total = 0 ;
+        let mut total = 0;
 
         if !hidden {
             aa.retain(|x| !x.as_ref().unwrap().file_name().to_string_lossy().starts_with("."));
-            total += total_blocks(&aa) ;
+            total += total_blocks(&aa);
         } else {
             total += total_blocks(&aa);
             if let Ok(current_metadata) = a.metadata() {
-                total += current_metadata.blocks()/2;
-                println!("sss");
+                total += current_metadata.blocks() / 2;
+                // println!("sss");
             }
-            
-            let parent_path = create_path(format!("{}/..", i.clone()));
+
+            let parent_path = create_path(String::from("/.."), i.clone());
             if let Ok(parent_metadata) = parent_path.metadata() {
-                total += parent_metadata.blocks()/2;
-                println!("ttt");
+                total += parent_metadata.blocks() / 2;
+                // println!("ttt");
             }
         }
 
@@ -408,7 +511,7 @@ pub fn display_long_folders(folders: Vec<String>, cc: bool, hidden: bool, dash :
         sort_fd(&mut new_fold);
         // println!("{:?}  +++", new_fold) ;
 
-        display_long_files(i.to_string(), new_fold, jj != folders.clone().len() - 1,dash);
+        display_long_files(i.to_string(), new_fold, jj != folders.clone().len() - 1, dash);
 
         jj += 1;
     }
@@ -416,7 +519,7 @@ pub fn display_long_folders(folders: Vec<String>, cc: bool, hidden: bool, dash :
 
 pub fn total_blocks(aa: &Vec<Result<DirEntry, std::io::Error>>) -> u64 {
     let mut total = 0u64;
-    
+
     for a in aa {
         if let Ok(i) = a {
             if let Ok(metadata) = i.metadata() {
@@ -424,6 +527,89 @@ pub fn total_blocks(aa: &Vec<Result<DirEntry, std::io::Error>>) -> u64 {
             }
         }
     }
+
+    total / 2
+}
+
+pub fn format_time(time: &std::time::SystemTime) -> String {
+    let now: DateTime<Utc> = (*time).into();
+    let mor_now = now.with_timezone(&Casablanca);
+    let six_months_ago = Utc::now().with_timezone(&Casablanca) - chrono::Duration::days(182);
+
+    if mor_now < six_months_ago {
+        mor_now.format("%b %e  %Y").to_string()
+    } else {
+        mor_now.format("%b %e %H:%M").to_string()
+    }
+}
+
+pub fn quotes(filename: String) -> (String, bool) {
+    // let special: &[char] = &[
+    //     ' ', '\t', '\n', '\'', '"', '\\', '|', '&', ';', '(', ')', 
+    //     '<', '>', '*', '?', '[', ']', '{', '}', '$', '`', '!', 
+    //     '#', '~', '=', '%', '^'
+    // ];
+
+    (filename,false)
     
-    total/2
+    // if !filename.is_empty() && 
+    //    !filename.starts_with('-') && 
+    //    filename.chars().all(|c| !c.is_control() && !special.contains(&c)) {
+    //     return (filename, false);
+    // }
+
+    // (format!("'{}'", filename), true)
+}
+
+pub fn color(a: String, path: &PathBuf , target : bool) -> String {
+    let Ok(link) = path.symlink_metadata() else {
+        return format!("\x1b[1;31;40m{}\x1b[0m", a);
+    };
+
+    
+    let metadata = if link.file_type().is_symlink() {
+        match path.metadata() {
+            Ok(m) => if target { m } else { return format!("\x1b[1;36m{}\x1b[0m", a) },
+            Err(_) =>  return format!("\x1b[1;31;40m{}\x1b[0m", a),
+        }
+    } else {
+        link
+    };
+
+    // if metadata.file_type().is_symlink() && !target {
+    //     if let Ok(_) = path.read_link() {
+    //         ;
+    //     }
+    //         return format!("\x1b[31;40m{}\x1b[0m", a);
+    // };
+
+    let file_type = metadata.file_type();
+
+    if file_type.is_dir() {
+        return format!("\x1b[1;34m{}\x1b[0m", a);
+    }
+
+    if file_type.is_file() {
+        let permissions = metadata.permissions();
+        let mode = permissions.mode();
+
+        if (mode & 0o111) != 0 {
+            return format!("\x1b[1;32m{}\x1b[0m", a);
+        }
+        return a;
+    }
+
+    if file_type.is_fifo() {
+        return format!("\x1b[0;40;33m{}\x1b[0m", a);
+    }
+
+    if file_type.is_socket() {
+        return format!("\x1b[1;35m{}\x1b[0m", a);
+    }
+
+    if file_type.is_char_device() || file_type.is_block_device() {
+        return format!("\x1b[1;40;33m{}\x1b[0m", a); 
+    }
+
+    a 
 }
