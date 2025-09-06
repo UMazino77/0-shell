@@ -35,7 +35,6 @@ pub fn exec_cat(
 
     detect_flags(Commands::Cat, args, mp);
     if !valid_flags(Commands::Cat, mp) {
-        println!("cat: invalid option");
         return Ok(());
     }
     let file_name = &args[0];

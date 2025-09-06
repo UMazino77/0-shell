@@ -12,7 +12,6 @@ pub fn exec_history(
 ) {
     detect_flags(cmd.clone(), args, mp);
     if !valid_flags(cmd.clone(), mp) {
-        println!("history: invalid flags");
         return;
     }
     if args.len() > 0 {
