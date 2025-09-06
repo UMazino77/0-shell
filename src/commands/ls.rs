@@ -213,17 +213,40 @@ pub fn dash_f(path: PathBuf, dash: bool) -> String {
     }
 
     let Ok(metadata) = path.symlink_metadata() else {
-        return String::from("?");
+        return String::new();
     };
 
     let file_type = metadata.file_type();
 
-    if file_type.is_dir() {
-        return String::from("/");
+    if file_type.is_symlink() {
+        match path.metadata() {
+            Ok(target_metadata) => {
+                if target_metadata.is_dir() {
+                    return String::from("/");  
+                } else if target_metadata.is_file() {
+                    let permissions = target_metadata.permissions();
+                    let mode = permissions.mode();
+                    if (mode & 0o111) != 0 {
+                        return String::from("*");  
+                    } else {
+                        return String::new();  
+                    }
+                } else if target_metadata.file_type().is_fifo() {
+                    return String::from("|"); 
+                } else if target_metadata.file_type().is_socket() {
+                    return String::from("=");  
+                } else {
+                    return String::from("@");  
+                }
+            }
+            Err(_) => {
+                return String::new();
+            }
+        }
     }
 
-    if file_type.is_symlink() {
-        return String::from("@");
+    if file_type.is_dir() {
+        return String::from("/");
     }
 
     if file_type.is_file() {
@@ -244,6 +267,7 @@ pub fn dash_f(path: PathBuf, dash: bool) -> String {
     if file_type.is_socket() {
         return String::from("=");
     }
+
     String::new()
 }
 
@@ -476,18 +500,29 @@ pub fn display_long_folders(folders: Vec<String>, cc: bool, hidden: bool, dash: 
         if !hidden {
             aa.retain(|x| !x.as_ref().unwrap().file_name().to_string_lossy().starts_with("."));
             total += total_blocks(&aa);
+
         } else {
             total += total_blocks(&aa);
+            // println!("+++ total {}", total);
             if let Ok(current_metadata) = a.metadata() {
                 total += current_metadata.blocks() / 2;
                 // println!("sss");
             }
+            // println!("--- total {}", total);
 
-            let parent_path = create_path(String::from("/.."), i.clone());
+            // println!("+-+- {:?}", a);
+
+            let parent_path = a.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("..")).to_path_buf();
+
+            // println!("*** parent_path: {:?}", parent_path);
+            
+            // println!("*** parent: {:?}", parent_path);
             if let Ok(parent_metadata) = parent_path.metadata() {
                 total += parent_metadata.blocks() / 2;
                 // println!("ttt");
             }
+            // println!("*** total {}", total);
+
         }
 
         if cc {
