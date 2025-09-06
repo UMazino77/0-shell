@@ -1,44 +1,70 @@
 use crate::zero::Commands;
 use std::env::*;
+use std::path::Path;
 
 pub fn exec_cd(
     _cmd: Commands,
     args: &mut Vec<String>,
     mp: &mut std::collections::HashMap<Commands, String>
 ) {
-    {
-        let user = whoami::username();
+    let user = whoami::username();
+    
+    if args.is_empty() {
+        *args = vec![String::from("~")];
+    }
+    
+    if args.len() > 1 {
+        println!("cd: too many arguments");
+        return;
+    }
 
-        if args.len() < 1 {
-            *args = vec![String::from("~")];
-        }
-        if args.len() > 1 {
-            println!("cd: too many arguments");
-            return;
-        }
+    let target_path = args[0].replace("~", &format!("/home/{}", user));
 
-        let mut path = &mut args[0].replace("~", &format!("/home/{}", user));
-
-        // println!("{}", path);
-
-        if path == "-" {
-            if mp.contains_key(&Commands::Cd) && let Some(old_path) = mp.get(&Commands::Cd) {
-                println!("{}", old_path);
+    if target_path == "-" {
+        match mp.get(&Commands::Cd) {
+            Some(old_path) => {
+                if !Path::new(old_path).exists() {
+                    println!("cd: {}: No such file or directory", old_path.replace(&format!("/home/{}", user), "~"));
+                    return;
+                }
+                let current_before = get_current_dir();
+                println!("{}", old_path.replace(&format!("/home/{}", user), "~"));
                 if let Err(e) = set_current_dir(old_path) {
                     println!("cd: {}: {}", old_path.replace(&format!("/home/{}", user), "~"), e);
-                } else {
-                    mp.insert(
-                        Commands::Cd,
-                        std::env::current_dir().unwrap().to_str().unwrap().to_string()
-                    );
+                } else if let Some(prev) = current_before {
+                    mp.insert(Commands::Cd, prev);
                 }
             }
-            return;
+            None => println!("cd: OLDPWD not set"),
         }
-        mp.insert(Commands::Cd, current_dir().unwrap().to_str().unwrap().to_string());
-        if let Err(e) = set_current_dir(&mut path) {
-            println!("cd: {}: {}", path, e);
-        }
-        // println!("{}", current_dir().unwrap().to_str().unwrap());
+        return;
     }
+
+    if !Path::new(&target_path).exists() {
+        println!("cd: {}: No such file or directory", target_path.replace(&format!("/home/{}", user), "~"));
+        return;
+    }
+
+    if !Path::new(&target_path).is_dir() {
+        println!("cd: {}: Not a directory", target_path.replace(&format!("/home/{}", user), "~"));
+        return;
+    }
+
+    let current_before = get_current_dir();
+    if let Err(e) = set_current_dir(&target_path) {
+        println!("cd: {}: {}", target_path.replace(&format!("/home/{}", user), "~"), e);
+    } else if let Some(prev) = current_before {
+        mp.insert(Commands::Cd, prev);
+    }
+}
+
+fn get_current_dir() -> Option<String> {
+    current_dir().ok().and_then(|p| {
+        let path_str = p.to_string_lossy().to_string();
+        if Path::new(&path_str).exists() {
+            Some(path_str)
+        } else {
+            None
+        }
+    })
 }

@@ -1,8 +1,8 @@
 use std::fs;
 use crate::zero::*;
 use std::path::Path;
-use crate::commands::cp::exec_cp;
-use crate::commands::rm::exec_rm;
+// use crate::commands::cp::exec_cp;
+// use crate::commands::rm::exec_rm;
 
 pub fn exec_mv(
     cmd: Commands,
@@ -31,15 +31,18 @@ pub fn exec_mv(
     }
 
     if !valid_flags(cmd.clone(), mp) {
-        println!("mv: invalid flags");
         return;
     }
 
     if dest_path.exists() {
         if dest_path.is_dir() {
-            exec_cp(Commands::Cp, &mut vec![src.clone(), dest.clone(), String::from("-r")], mp);
-            if let Err(e) = exec_rm(Commands::Rm, &mut vec![src.clone(), String::from("-r")], mp) {
-                println!("mv: cannot remove '{}': {}", src, e);
+            let final_dest = dest_path.join(src_path.file_name().unwrap());
+            let final_dest_str = final_dest.to_string_lossy().to_string();
+
+            execute(Commands::Cp, &mut vec![src.clone(), final_dest_str.clone(), String::from("-r")], &mut mp.clone());
+
+            if final_dest.exists() {
+                execute(Commands::Rm, &mut vec![src.clone(), String::from("-r")], &mut mp.clone());
             }
         } else {
             if src_path.is_dir() {
