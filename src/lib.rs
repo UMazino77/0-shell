@@ -65,17 +65,18 @@ pub mod zero {
                 if let Err(e) = exec_rm(cmd, args, mp) {
                     println!("Error executing rm: {}", e);
                 }
+                mp.remove(&Commands::Rm);
             }
             Commands::Cd => exec_cd(cmd, args, mp),
-            Commands::Mv => {exec_mv(cmd, args, mp); mp.clear()},
-            Commands::Pwd => {exec_pwd(cmd, args); mp.clear()},
-            Commands::Mkdir => {exec_mkdir(cmd, args, mp); mp.clear()},
-            Commands::Cp => {exec_cp(cmd, args, mp); mp.clear()},
-            Commands::Exit => {exec_exit(args); mp.clear()},
-            Commands::Cat => {let _ = exec_cat(cmd, args, mp); mp.clear()},
-            Commands::Clear => {exec_clear(); mp.clear()},
-            Commands::History => {exec_history(cmd, args, mp); mp.clear()},
-            Commands::Ls => {exec_ls(cmd, args, mp); mp.clear()},
+            Commands::Mv => {exec_mv(cmd, args, mp); mp.remove(&Commands::Mv);},
+            Commands::Pwd => {exec_pwd(cmd, args); mp.remove(&Commands::Pwd);},
+            Commands::Mkdir => {exec_mkdir(cmd, args, mp); mp.remove(&Commands::Mkdir);},
+            Commands::Cp => {exec_cp(cmd, args, mp); mp.remove(&Commands::Cp);},
+            Commands::Exit => {exec_exit(args); mp.remove(&Commands::Exit);},
+            Commands::Cat => {let _ = exec_cat(cmd, args, mp); mp.remove(&Commands::Cat);},
+            Commands::Clear => {exec_clear(cmd, args, mp); mp.remove(&Commands::Clear);},
+            Commands::History => {exec_history(cmd, args, mp); mp.remove(&Commands::History);},
+            Commands::Ls => {exec_ls(cmd, args, mp); mp.remove(&Commands::Ls);},
             _ => println!("Command {:?} not implemented yet", cmd),
         }
     }
@@ -95,9 +96,9 @@ pub mod zero {
                         amp.push(ch);
                     }
                 }
-                args.retain(|arg| !arg.starts_with('-'));
             }
         }
+        args.retain(|arg| !arg.starts_with('-'));
     }
 
     pub fn valid_flags(
@@ -105,25 +106,20 @@ pub mod zero {
         mp: &mut std::collections::HashMap<Commands, String>
     ) -> bool {
         // println!("{:?} --- {:?}", cmd, mp);
-        match cmd {
-            Commands::Rm => {
-                return check(cmd.clone(), mp, "r".to_string());
-            }
-            Commands::Mkdir => {
-                return check(cmd.clone(), mp, "p".to_string());
-            }
-            Commands::Cp => {
-                return check(cmd.clone(), mp, "r".to_string());
-            }
-            Commands::Cat => {
-                return check(cmd.clone(), mp, "n".to_string());
-            }
-            Commands::Ls => {
-                return check(cmd.clone(), mp, "alF".to_string());
-            }
-            _ => {}
-        }
-        true
+        return match cmd {
+            Commands::Rm => check(cmd.clone(), mp, "r".to_string()),
+            Commands::Mkdir => check(cmd.clone(), mp, "p".to_string()),
+            Commands::Cp => check(cmd.clone(), mp, "r".to_string()),
+            Commands::Cat => check(cmd.clone(), mp, "n".to_string()),
+            Commands::Ls => check(cmd.clone(), mp, "alF".to_string()),
+            Commands::Echo => check(cmd.clone(), mp, String::new()),
+            Commands::Clear => check(cmd.clone(), mp, String::new()),
+            Commands::Pwd => check(cmd.clone(), mp, String::new()),
+            Commands::Cd => check(cmd.clone(), mp, String::new()),
+            Commands::Mv => check(cmd.clone(), mp, String::new()),
+            Commands::History => check(cmd.clone(), mp, String::from("c")),
+            _ => true,
+        } ;
     }
 
     pub fn checker(
@@ -151,7 +147,4 @@ pub mod zero {
         true
     }
 
-    pub fn clear_terminal() {
-        clearscreen::clear().expect("Failed to clear terminal");
-    }
 }
