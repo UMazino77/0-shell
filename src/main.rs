@@ -14,7 +14,7 @@ fn main() -> rustyline::Result<()> {
         let mut path = std::env::current_dir().unwrap().to_str().unwrap().to_string();
         path = path.replace(&("/home/".to_owned() + &user), "~");
 
-        let mut line = match rl.readline(&format!("{} $ ", path)) {
+        let mut line = match rl.readline(&format!("{}:{} $ ", col_user(), col_path(path))) {
             Ok(line) => {
                 let _ = rl.add_history_entry(line.as_str());
                 let _ = rl.append_history(&his_path);
@@ -188,4 +188,13 @@ fn handle_quotes(input: &str, user: &str) -> Vec<String> {
     }
     
     res
+}
+
+pub fn col_user() -> String {
+    let user = whoami::username();
+    return format!("\x1b[1;32m{}\x1b[0m", user);
+}
+
+pub fn col_path(a : String) -> String {
+    format!("\x1b[1;33m[<\x1b[0m\x1b[1;1m{}\x1b[0m\x1b[1;33m>]\x1b[0m", a)
 }
