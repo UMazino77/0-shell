@@ -18,6 +18,10 @@ pub fn exec_cd(
         return;
     }
 
+    if args[0] == "--" {
+        args[0] = String::from("~");
+    }
+
     let target_path = args[0].replace("~", &format!("/home/{}", user));
 
     if target_path == "-" {
