@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod lexer;
 
 pub mod zero {
     use crate::commands::cd::exec_cd;

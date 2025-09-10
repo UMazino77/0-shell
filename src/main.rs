@@ -1,7 +1,8 @@
+use rustyline::{Editor, error::ReadlineError};
+use shell::commands::echo::exec_echo;
+use shell::lexer::token::{has_unclosed_quotes, tokenize_input};
 use shell::zero::*;
 use std::collections::HashMap;
-use rustyline::{ Editor, error::ReadlineError };
-use shell::commands::echo::exec_echo;
 
 fn main() -> rustyline::Result<()> {
     let mut rl = Editor::<(), _>::new()?;
@@ -9,9 +10,14 @@ fn main() -> rustyline::Result<()> {
     let his_path = format!("/home/{}/.zero-history.txt", user);
     let _ = rl.load_history(&his_path);
     let mut mp = HashMap::new();
-    
+    // println!("hello'$'\n''world");
+
     loop {
-        let mut path = std::env::current_dir().unwrap().to_str().unwrap().to_string();
+        let mut path = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
         path = path.replace(&("/home/".to_owned() + &user), "~");
 
         let mut line = match rl.readline(&format!("{}:{} $ ", col_user(), col_path(path))) {
@@ -25,7 +31,6 @@ fn main() -> rustyline::Result<()> {
                 break;
             }
             Err(ReadlineError::Eof) => {
-                // clear_terminal();
                 break;
             }
             Err(_) => {
@@ -33,6 +38,7 @@ fn main() -> rustyline::Result<()> {
             }
         };
 
+        // Check for unclosed quotes using lexer
         while has_unclosed_quotes(&line) {
             match rl.readline("dquote> ") {
                 Ok(additional_input) => {
@@ -55,26 +61,7 @@ fn main() -> rustyline::Result<()> {
             }
         }
 
-        let args: Vec<&str> = line
-            .trim()
-            .split(|x: char| x == ';')
-            .collect();
-            
-        if args.is_empty() {
-            continue;
-        }
-
-        let mut b: Vec<Vec<String>> = Vec::new();
-        for i in args.iter() {
-            if i.trim().is_empty() {
-                continue;
-            }
-            
-            let a = handle_quotes(i.trim(), &user);
-            if !a.is_empty() {
-                b.push(a);
-            }
-        }
+        let mut b = tokenize_input(&line, &user);
 
         for j in b.iter_mut() {
             if j.is_empty() {
@@ -98,103 +85,15 @@ fn main() -> rustyline::Result<()> {
     Ok(())
 }
 
-fn has_unclosed_quotes(input: &str) -> bool {
-    let mut aaa = 0;
-    let mut bbb = 0;
-    let mut escaped = false;
-    
-    for c in input.chars() {
-        if escaped {
-            escaped = false;
-            continue;
-        }
-        
-        match c {
-            '\\' => escaped = true,
-            '"' => aaa += 1,
-            '\'' => bbb += 1,
-            _ => {}
-        }
-    }
-    
-    aaa % 2 != 0 || bbb % 2 != 0
-}
-
-fn handle_quotes(input: &str, user: &str) -> Vec<String> {
-    let mut res = Vec::new();
-    let mut ress = String::new();
-    let mut aaa = 0;
-    let mut bbb = 0;
-    let mut escaped = false;
-    
-    let chars: Vec<char> = input.chars().collect();
-    let mut i = 0;
-    
-    while i < chars.len() {
-        let c = chars[i];
-        
-        if escaped {
-            match c {
-                '"' | '\'' | '\\' | 'n' | 't' | 'r' => {
-                    match c {
-                        'n' => ress.push('\n'),
-                        't' => ress.push('\t'),
-                        'r' => ress.push('\r'),
-                        _ => ress.push(c),
-                    }
-                }
-                _ => {
-                    ress.push('\\');
-                    ress.push(c);
-                }
-            }
-            escaped = false;
-        } else {
-            match c {
-                '\\' => {
-                    escaped = true;
-                }
-                '"' if bbb % 2 == 0 => {
-                    aaa += 1;
-                }
-                '\'' if aaa % 2 == 0 => {
-                    bbb += 1;
-                }
-                ' ' | '\t' if aaa % 2 == 0 && bbb % 2 == 0 => {
-                    if !ress.is_empty() {
-                        if ress.starts_with('~') {
-                            ress = ress.replace("~", &format!("/home/{}", user));
-                        }
-                        res.push(ress.replace("\n", "'$'\\n"));
-                        ress = String::new();
-                    }
-                    while i + 1 < chars.len() && (chars[i + 1] == ' ' || chars[i + 1] == '\t') {
-                        i += 1;
-                    }
-                }
-                _ => {
-                    ress.push(c);
-                }
-            }
-        }
-        i += 1;
-    }
-    
-    if !ress.is_empty() {
-        if ress.starts_with('~') {
-            ress = ress.replace("~", &format!("/home/{}", user));
-        }
-        res.push(ress.replace("\n", "'$'\\n"));
-    }
-    
-    res
-}
-
+// Keep utility functions
 pub fn col_user() -> String {
     let user = whoami::username();
-    return format!("\x1b[1;32m{}\x1b[0m", user);
+    format!("\x1b[1;32m{}\x1b[0m", user)
 }
 
-pub fn col_path(a : String) -> String {
-    format!("\x1b[1;33m[<\x1b[0m\x1b[1;1m{}\x1b[0m\x1b[1;33m>]\x1b[0m", a)
+pub fn col_path(a: String) -> String {
+    format!(
+        "\x1b[1;33m[<\x1b[0m\x1b[1;1m{}\x1b[0m\x1b[1;33m>]\x1b[0m",
+        a
+    )
 }
