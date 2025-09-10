@@ -112,13 +112,14 @@ impl Lexer {
             if escaped {
                 // Handle escape sequences inside quotes
                 match c {
-                    'n' => content.push('\n'),
-                    't' => content.push('\t'),
-                    'r' => content.push('\r'),
+                    // 'n' => content.push('\n'),
+                    // 't' => content.push('\t'),
+                    // 'r' => content.push('\r'),
                     '\\' => content.push('\\'),
                     '"' => content.push('"'),
                     '\'' => content.push('\''),
                     '0' => content.push('\0'),
+                    // ' ' => content.push(' '),
                     '$' => content.push('$'), // Escaped dollar
                     '`' => content.push('`'), // Escaped backtick
                     _ => {
@@ -127,6 +128,7 @@ impl Lexer {
                         content.push(c);
                     }
                 }
+
                 escaped = false;
                 self.advance();
             } else if c == '\\' {
@@ -164,47 +166,8 @@ impl Lexer {
                 self.advance();
             }
         }
-        let word = self.process_escape_sequences(&word);
+        // let word = self.process_escape_sequences(&word);
         Ok(word)
-    }
-
-    // Add this function to handle escape sequences
-    fn process_escape_sequences(&self, input: &str) -> String {
-        // println!("{}",input);
-        let mut result = String::new();
-        let mut chars = input.chars().peekable();
-        let mut escaped = false;
-
-        while let Some(c) = chars.next() {
-            if escaped {
-                match c {
-                    'n' => result.push('\n'),
-                    't' => result.push('\t'),
-                    'r' => result.push('\r'),
-                    '\\' => result.push('\\'),
-                    '"' => result.push('"'),
-                    '\'' => result.push('\''),
-                    '0' => result.push('\0'),
-                    _ => {
-                        // Unknown escape sequence, treat literally
-                        result.push('\\');
-                        result.push(c);
-                    }
-                }
-                escaped = false;
-            } else if c == '\\' {
-                escaped = true;
-            } else {
-                result.push(c);
-            }
-        }
-
-        // Handle trailing backslash
-        if escaped {
-            result.push('\\');
-        }
-
-        result
     }
 }
 
