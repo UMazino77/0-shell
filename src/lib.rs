@@ -13,6 +13,7 @@ pub mod zero {
     use crate::commands::history::exec_history;
     use crate::commands::clear::exec_clear;
     use crate::commands::ls::exec_ls;
+    use crate::commands::touch::exec_touch;
 
     // use crate::commands::echo::exec_echo;
 
@@ -31,7 +32,8 @@ pub mod zero {
         Cat,
         Exit,
         History,
-        Clear
+        Clear,
+        Touch
     }
 
     impl Commands {
@@ -49,8 +51,7 @@ pub mod zero {
                 "exit" => Some(Commands::Exit),
                 "history" => Some(Commands::History),
                 "clear" => Some(Commands::Clear),
-
-
+                "touch" => Some(Commands::Touch),
                 _ => None,
             }
         }
@@ -79,6 +80,7 @@ pub mod zero {
             Commands::Clear => {exec_clear(cmd, args, mp); mp.remove(&Commands::Clear);},
             Commands::History => {exec_history(cmd, args, mp); mp.remove(&Commands::History);},
             Commands::Ls => {exec_ls(cmd, args, mp); mp.remove(&Commands::Ls);},
+            Commands::Touch => {exec_touch(cmd, args, mp); mp.remove(&Commands::Touch);},
             _ => println!("Command {:?} not implemented yet", cmd),
         }
     }
@@ -91,7 +93,7 @@ pub mod zero {
         for arg in args.clone() {
             if arg.starts_with('-') && arg.len() > 1 {
 
-                println!("{} --- ++++", arg);
+                // println!("{} --- ++++", arg);
                 for ch in arg[1..].chars() {
                     let amp = mp.entry(cmd.clone()).or_insert(ch.to_string());
                     // println!("{} --- ++++", amp);
@@ -114,13 +116,14 @@ pub mod zero {
             Commands::Mkdir => check(cmd.clone(), mp, "p".to_string()),
             Commands::Cp => check(cmd.clone(), mp, "r".to_string()),
             Commands::Cat => check(cmd.clone(), mp, "n".to_string()),
-            Commands::Ls => check(cmd.clone(), mp, "alF".to_string()),
+            Commands::Ls => check(cmd.clone(), mp, "alFtr".to_string()),
             Commands::Echo => check(cmd.clone(), mp, String::new()),
             Commands::Clear => check(cmd.clone(), mp, String::new()),
             Commands::Pwd => check(cmd.clone(), mp, String::new()),
             Commands::Cd => check(cmd.clone(), mp, String::new()),
             Commands::Mv => check(cmd.clone(), mp, String::new()),
             Commands::History => check(cmd.clone(), mp, String::from("c")),
+            Commands::Touch => check(cmd.clone(), mp, String::new()),
             _ => true,
         } ;
     }
