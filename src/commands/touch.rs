@@ -1,3 +1,5 @@
+use crate::zero::{detect_flags, valid_flags};
+
 pub fn exec_touch(
     _cmd: crate::zero::Commands,
     args: &mut Vec<String>,
@@ -5,6 +7,11 @@ pub fn exec_touch(
 ) {
     if args.is_empty() {
         println!("touch: missing file operand");
+        return;
+    }
+
+    detect_flags(_cmd, args, _mp);
+    if !valid_flags(_cmd, _mp) {
         return;
     }
 
