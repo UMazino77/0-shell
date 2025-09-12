@@ -10,7 +10,7 @@ pub fn exec_touch(
         return;
     }
 
-    detect_flags(_cmd, args, _mp);
+    detect_flags(_cmd.clone(), args, _mp);
     if !valid_flags(_cmd, _mp) {
         return;
     }
