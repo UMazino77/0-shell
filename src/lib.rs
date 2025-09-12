@@ -64,14 +64,14 @@ pub mod zero {
         let mut catt = 1;
         match cmd {
             Commands::Rm => {
-                if let Err(e) = exec_rm(cmd, args, mp) {
-                    println!("Error executing rm: {}", e);
+                if let Err(_) = exec_rm(cmd, args, mp) {
+                    return ;
                 }
                 mp.remove(&Commands::Rm);
             }
             Commands::Cd => exec_cd(cmd, args, mp),
             Commands::Mv => {exec_mv(cmd, args, mp); mp.remove(&Commands::Mv);},
-            Commands::Pwd => {exec_pwd(cmd, args); mp.remove(&Commands::Pwd);},
+            Commands::Pwd => {exec_pwd(cmd, args, mp)},
             Commands::Mkdir => {exec_mkdir(cmd, args, mp); mp.remove(&Commands::Mkdir);},
             Commands::Cp => {exec_cp(cmd, args, mp); mp.remove(&Commands::Cp);},
             Commands::Exit => {exec_exit(args); mp.remove(&Commands::Exit);},

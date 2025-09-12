@@ -8,11 +8,11 @@ pub fn exec_cd(
     mp: &mut std::collections::HashMap<Commands, String>
 ) {
     let user = whoami::username();
-    
+
     if args.is_empty() {
         *args = vec![String::from("~")];
     }
-    
+
     if args.len() > 1 {
         println!("cd: too many arguments");
         return;
@@ -28,7 +28,10 @@ pub fn exec_cd(
         match mp.get(&Commands::Cd) {
             Some(old_path) => {
                 if !Path::new(old_path).exists() {
-                    println!("cd: {}: No such file or directory", old_path.replace(&format!("/home/{}", user), "~"));
+                    println!(
+                        "cd: {}: No such file or directory",
+                        old_path.replace(&format!("/home/{}", user), "~")
+                    );
                     return;
                 }
                 let current_before = get_current_dir();
@@ -45,7 +48,10 @@ pub fn exec_cd(
     }
 
     if !Path::new(&target_path).exists() {
-        println!("cd: {}: No such file or directory", target_path.replace(&format!("/home/{}", user), "~"));
+        println!(
+            "cd: {}: No such file or directory",
+            target_path.replace(&format!("/home/{}", user), "~")
+        );
         return;
     }
 
@@ -57,18 +63,26 @@ pub fn exec_cd(
     let current_before = get_current_dir();
     if let Err(e) = set_current_dir(&target_path) {
         println!("cd: {}: {}", target_path.replace(&format!("/home/{}", user), "~"), e);
+        return;
     } else if let Some(prev) = current_before {
         mp.insert(Commands::Cd, prev);
     }
+
+    let currr = get_current_dir();
+    
+    mp.insert(Commands::Pwd, currr.unwrap_or("Unkno".to_string()));
+
 }
 
 fn get_current_dir() -> Option<String> {
-    current_dir().ok().and_then(|p| {
-        let path_str = p.to_string_lossy().to_string();
-        if Path::new(&path_str).exists() {
-            Some(path_str)
-        } else {
-            None
-        }
-    })
+    current_dir()
+        .ok()
+        .and_then(|p| {
+            let path_str = p.to_string_lossy().to_string();
+            if Path::new(&path_str).exists() {
+                Some(path_str)
+            } else {
+                None
+            }
+        })
 }

@@ -13,11 +13,13 @@ fn main() -> rustyline::Result<()> {
     // println!("hello'$'\n''world");
 
     loop {
-        let mut path = std::env::current_dir()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
+        let a = mp.get(&Commands::Pwd);
+        let p = std::env::current_dir();
+        let mut path = if let Ok(pp) = p {
+            pp.display().to_string()
+        } else {
+            a.unwrap_or(&"Unknown error".to_string()).to_string()
+        };
         path = path.replace(&("/home/".to_owned() + &user), "~");
 
         let mut line = match rl.readline(&format!("{}:{} $ ", col_user(), col_path(path))) {

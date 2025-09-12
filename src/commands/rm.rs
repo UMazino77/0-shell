@@ -9,6 +9,9 @@ pub fn exec_rm(
     mp: &mut std::collections::HashMap<Commands, String>
 ) -> io::Result<()> {
     detect_flags(cmd.clone(), args, mp);
+    if valid_flags(cmd.clone(), mp) == false {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid flags"));
+    }
 
     for i in args {
         let path_str = format!("./{}", i);
