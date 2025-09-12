@@ -24,7 +24,8 @@ pub fn exec_history(
         let _ = exec_rm(cmd.clone(), &mut vec![his_path.to_string()], mp);
         mp.remove(&cmd);
     } else {
-        let _ = exec_cat(Commands::Cat, &mut vec![his_path.to_string(), "-n".to_string()], mp);
+        let mut catt = 1;
+        let _ = exec_cat(&mut catt, Commands::Cat, &mut vec![his_path.to_string(), "-n".to_string()], mp);
     }
     
 }

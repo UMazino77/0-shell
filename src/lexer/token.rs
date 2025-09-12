@@ -1,7 +1,5 @@
 use std::fmt;
 
-use rustyline::Word;
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Command(String),  // First word: "ls", "echo"

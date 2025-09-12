@@ -61,6 +61,7 @@ pub mod zero {
         args: &mut Vec<String>,
         mp: &mut std::collections::HashMap<Commands, String>,
     ) {
+        let mut catt = 1;
         match cmd {
             Commands::Rm => {
                 if let Err(e) = exec_rm(cmd, args, mp) {
@@ -74,7 +75,7 @@ pub mod zero {
             Commands::Mkdir => {exec_mkdir(cmd, args, mp); mp.remove(&Commands::Mkdir);},
             Commands::Cp => {exec_cp(cmd, args, mp); mp.remove(&Commands::Cp);},
             Commands::Exit => {exec_exit(args); mp.remove(&Commands::Exit);},
-            Commands::Cat => {let _ = exec_cat(cmd, args, mp); mp.remove(&Commands::Cat);},
+            Commands::Cat => {let _ = exec_cat(&mut catt, cmd, args, mp); mp.remove(&Commands::Cat);},
             Commands::Clear => {exec_clear(cmd, args, mp); mp.remove(&Commands::Clear);},
             Commands::History => {exec_history(cmd, args, mp); mp.remove(&Commands::History);},
             Commands::Ls => {exec_ls(cmd, args, mp); mp.remove(&Commands::Ls);},
@@ -88,8 +89,9 @@ pub mod zero {
         mp: &mut std::collections::HashMap<Commands, String>
     ) {
         for arg in args.clone() {
-            if arg.starts_with('-') {
-                // println!("{} --- ++++", arg);
+            if arg.starts_with('-') && arg.len() > 1 {
+
+                println!("{} --- ++++", arg);
                 for ch in arg[1..].chars() {
                     let amp = mp.entry(cmd.clone()).or_insert(ch.to_string());
                     // println!("{} --- ++++", amp);
@@ -99,7 +101,7 @@ pub mod zero {
                 }
             }
         }
-        args.retain(|arg| !arg.starts_with('-'));
+        args.retain(|arg| !arg.starts_with('-') || arg == "-");
     }
 
     pub fn valid_flags(
