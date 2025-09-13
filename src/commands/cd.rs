@@ -1,7 +1,6 @@
 use crate::commands::ls::create_path;
 use crate::zero::Commands;
-use std::{env::*, path};
-use std::fs::*;
+use std::{env::*};
 use std::path::*;
 
 pub fn exec_cd(
@@ -84,12 +83,16 @@ pub fn exec_cd(
    let Ok(link) = create_path(String::from("."), target_path.clone()).symlink_metadata() else {
         // println!("{}", format!("{}/{}", linked, target_path));
         // println!("ddddd");
-        linked = format!("{}/{}", linked, target_path);
+        linked = create_path(linked, target_path).to_string_lossy().to_string();
         mp.insert(Commands::Pwd, linked);
         return;
     };
 
     if link.file_type().is_symlink() {
+        // println!("{}", format!("{}/{}", linked, target_path));
+        // println!("ddddd");
+        linked = create_path(linked, target_path).to_string_lossy().to_string();
+
         // println!("{}", format!("{}/{}", linked, target_path));
         mp.insert(Commands::Pwd, linked);
         return;
