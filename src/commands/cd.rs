@@ -42,7 +42,7 @@ pub fn exec_cd(
                     mp.insert(Commands::Cd, prev);
                 }
             }
-            None => println!("cd: OLDPWD not set"),
+            None => _ = {mp.insert(Commands::Cd, get_current_dir().unwrap_or("~".into())); set_current_dir(&format!("/home/{}", user))},
         }
         return;
     }

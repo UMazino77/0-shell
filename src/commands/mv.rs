@@ -1,6 +1,6 @@
 use std::fs;
-use crate::zero::*;
-use std::path::Path;
+use crate::{commands::ls::create_path, zero::*};
+// use std::path::Path;
 // use crate::commands::cp::exec_cp;
 // use crate::commands::rm::exec_rm;
 
@@ -19,11 +19,8 @@ pub fn exec_mv(
     let src = &args[0];
     let dest = &args[1];
 
-    let src_path_str = format!("./{}", src);
-    let dest_path_str = format!("./{}", dest);
-
-    let src_path = Path::new(&src_path_str);
-    let dest_path = Path::new(&dest_path_str);
+    let src_path = create_path(String::from("."), src.to_string());
+    let dest_path = create_path(String::from("."), dest.to_string());
 
     if !src_path.exists() {
         println!("mv: cannot stat '{}': No such file or directory", src);

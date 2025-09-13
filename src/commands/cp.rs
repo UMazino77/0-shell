@@ -1,7 +1,7 @@
 use crate::zero::Commands;
 use crate::zero::*;
-use std::path::*;
 use std::fs::*;
+use crate::commands::ls::create_path;
 
 pub fn exec_cp(
     cmd: Commands,
@@ -22,34 +22,22 @@ pub fn exec_cp(
     let src = &args[0];
     let dest = &args[1];
 
-    let a = if src.starts_with("./") {
-        src.to_string()
-    } else {
-        "./".to_owned() + src
-    };
-    
-    let b = if dest.starts_with("./") {
-        dest.to_string()
-    } else {
-        "./".to_owned() + dest
-    };
-
-    let src_path = Path::new(&a);
-    let dest_path = Path::new(&b);
+    let src_path = create_path(".".to_owned(), src.to_string());
+    let dest_path = create_path(".".to_owned(), dest.to_string());
 
     if !src_path.exists() {
         eprintln!("cp: cannot stat '{}': No such file or directory", src);
         return;
     }
 
-    if src_path.is_dir() {
-        if mp.contains_key(&Commands::Cp) && mp.get(&Commands::Cp) == Some(&"r".to_string()) {
-            let final_dest = if dest_path.exists() && dest_path.is_dir() {
+        let final_dest = if dest_path.exists() && dest_path.is_dir() {
                 dest_path.join(src_path.file_name().unwrap())
             } else {
                 dest_path.to_path_buf()
             };
 
+    if src_path.is_dir() {
+        if mp.contains_key(&Commands::Cp) && mp.get(&Commands::Cp) == Some(&"r".to_string()) {
             if let Err(e) = create_dir_all(&final_dest) {
                 eprintln!("cp: error creating directory '{}': {}", final_dest.display(), e);
                 return;
@@ -70,12 +58,6 @@ pub fn exec_cp(
             return;
         }
     } else {
-        let final_dest = if dest_path.exists() && dest_path.is_dir() {
-            dest_path.join(src_path.file_name().unwrap())
-        } else {
-            dest_path.to_path_buf()
-        };
-
         if let Err(e) = copy(src_path, &final_dest) {
             eprintln!("cp: error copying file '{}': {}", src, e);
         }

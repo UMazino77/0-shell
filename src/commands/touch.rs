@@ -1,4 +1,5 @@
 use crate::zero::{detect_flags, valid_flags};
+use std::fs::* ;
 
 pub fn exec_touch(
     _cmd: crate::zero::Commands,
@@ -16,7 +17,7 @@ pub fn exec_touch(
     }
 
     for filename in args.iter() {
-        match std::fs::OpenOptions::new()
+        match OpenOptions::new()
             .create(true)
             .write(true)
             .open(filename)

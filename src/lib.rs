@@ -116,7 +116,7 @@ pub mod zero {
             Commands::Mkdir => check(cmd.clone(), mp, "p".to_string()),
             Commands::Cp => check(cmd.clone(), mp, "r".to_string()),
             Commands::Cat => check(cmd.clone(), mp, "n".to_string()),
-            Commands::Ls => check(cmd.clone(), mp, "alFtr".to_string()),
+            Commands::Ls => check(cmd.clone(), mp, "alF".to_string()),
             Commands::Echo => check(cmd.clone(), mp, String::new()),
             Commands::Clear => check(cmd.clone(), mp, String::new()),
             Commands::Pwd => check(cmd.clone(), mp, String::new()),
