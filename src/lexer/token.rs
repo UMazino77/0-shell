@@ -8,7 +8,6 @@ pub enum Token {
     Semicolon,        // Added: ";" operator
 }
 
-// Simple error type
 #[derive(Debug)]
 pub enum LexerError {
     UnclosedQuote(usize),
@@ -110,16 +109,14 @@ impl Lexer {
             if escaped {
                 // Handle escape sequences inside quotes
                 match c {
-                    // 'n' => content.push('\n'),
-                    // 't' => content.push('\t'),
-                    // 'r' => content.push('\r'),
+                   
                     '\\' => content.push('\\'),
                     '"' => content.push('"'),
                     '\'' => content.push('\''),
                     '0' => content.push('\0'),
                     // ' ' => content.push(' '),
-                    '$' => content.push('$'), // Escaped dollar
-                    '`' => content.push('`'), // Escaped backtick
+                    '$' => content.push('$'), 
+                    '`' => content.push('`'), 
                     _ => {
                         // Unknown escape sequence, treat literally
                         content.push('\\');
@@ -164,12 +161,10 @@ impl Lexer {
                 self.advance();
             }
         }
-        // let word = self.process_escape_sequences(&word);
         Ok(word)
     }
 }
 
-// Helper function to check for unclosed quotes
 pub fn has_unclosed_quotes(input: &str) -> bool {
     let mut lexer = Lexer::new(input.to_string());
     lexer.tokenize().is_err()
