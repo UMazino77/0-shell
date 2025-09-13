@@ -41,10 +41,13 @@ pub fn exec_cd(
                 if let Err(e) = set_current_dir(old_path) {
                     println!("cd: {}: {}", old_path.replace(&format!("/home/{}", user), "~"), e);
                 } else if let Some(prev) = current_before {
-                    mp.insert(Commands::Cd, prev);
+                    mp.insert(Commands::Cd, prev.clone());
+                    mp.insert(Commands::Pwd, get_current_dir().unwrap_or("~".into()));
                 }
             }
-            None => _ = {mp.insert(Commands::Cd, get_current_dir().unwrap_or("~".into())); set_current_dir(&format!("/home/{}", user))},
+            None => _ = {mp.insert(Commands::Cd, get_current_dir().unwrap_or("~".into()));
+            mp.insert(Commands::Pwd, get_current_dir().unwrap_or("~".into()));
+             set_current_dir(&format!("/home/{}", user))},
         }
         return;
     }
@@ -62,27 +65,33 @@ pub fn exec_cd(
         return;
     }
 
+    let mut linked = String::new() ;
+
     let current_before = get_current_dir();
     if let Err(e) = set_current_dir(&target_path) {
         println!("cd: {}: {}", target_path.replace(&format!("/home/{}", user), "~"), e);
         return;
     } else if let Some(prev) = current_before {
+        // println!("{} +++", prev);
+        linked = prev.clone() ;
         mp.insert(Commands::Cd, prev);
     }
 
     let currr = get_current_dir();
 
-    println!("{}", target_path);
+    // println!("{}", target_path);
 
    let Ok(link) = create_path(String::from("."), target_path.clone()).symlink_metadata() else {
-        println!("ddddd");
-        mp.insert(Commands::Pwd, currr.unwrap_or("Unkno".to_string()));
+        // println!("{}", format!("{}/{}", linked, target_path));
+        // println!("ddddd");
+        linked = format!("{}/{}", linked, target_path);
+        mp.insert(Commands::Pwd, linked);
         return;
     };
 
     if link.file_type().is_symlink() {
-        println!("{}", target_path);
-        mp.insert(Commands::Pwd, target_path);
+        // println!("{}", format!("{}/{}", linked, target_path));
+        mp.insert(Commands::Pwd, linked);
         return;
     }
     
