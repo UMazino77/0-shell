@@ -69,11 +69,9 @@ pub fn handle_files_folders(
         match path.symlink_metadata() {
             Ok(metadata) => {
                 if metadata.file_type().is_symlink() {
-                    if path.exists() && path.is_dir() {
-                        folders.push(i.clone());
-                    } else {
+                    files.push(i.clone());
+                    if !path.exists() {
                         println!("ls: cannot read symbolic link '{}': Permission denied", i);
-                        files.push(i.clone());
                     }
                 } else if metadata.is_dir() {
                     folders.push(i.clone());
@@ -597,54 +595,54 @@ pub fn quotes(filename: String) -> (String, bool) {
 }
 
 pub fn color(a: String, path: &PathBuf , target : bool) -> String {
-    let Ok(link) = path.symlink_metadata() else {
-        return format!("\x1b[1;31;40m{}\x1b[0m", a);
-    };
-
-    
-    let metadata = if link.file_type().is_symlink() {
-        match path.metadata() {
-            Ok(m) => if target { m } else { return format!("\x1b[1;36m{}\x1b[0m", a) },
-            Err(_) =>  return format!("\x1b[1;31;40m{}\x1b[0m", a),
-        }
-    } else {
-        link
-    };
-
-    // if metadata.file_type().is_symlink() && !target {
-    //     if let Ok(_) = path.read_link() {
-    //         ;
-    //     }
-    //         return format!("\x1b[31;40m{}\x1b[0m", a);
+    // let Ok(link) = path.symlink_metadata() else {
+    //     return format!("\x1b[1;31;40m{}\x1b[0m", a);
     // };
 
-    let file_type = metadata.file_type();
+    
+    // let metadata = if link.file_type().is_symlink() {
+    //     match path.metadata() {
+    //         Ok(m) => if target { m } else { return format!("\x1b[1;36m{}\x1b[0m", a) },
+    //         Err(_) =>  return format!("\x1b[1;31;40m{}\x1b[0m", a),
+    //     }
+    // } else {
+    //     link
+    // };
 
-    if file_type.is_dir() {
-        return format!("\x1b[1;34m{}\x1b[0m", a);
-    }
+    // // if metadata.file_type().is_symlink() && !target {
+    // //     if let Ok(_) = path.read_link() {
+    // //         ;
+    // //     }
+    // //         return format!("\x1b[31;40m{}\x1b[0m", a);
+    // // };
 
-    if file_type.is_file() {
-        let permissions = metadata.permissions();
-        let mode = permissions.mode();
+    // let file_type = metadata.file_type();
 
-        if (mode & 0o111) != 0 {
-            return format!("\x1b[1;32m{}\x1b[0m", a);
-        }
-        return a;
-    }
+    // if file_type.is_dir() {
+    //     return format!("\x1b[1;34m{}\x1b[0m", a);
+    // }
 
-    if file_type.is_fifo() {
-        return format!("\x1b[0;40;33m{}\x1b[0m", a);
-    }
+    // if file_type.is_file() {
+    //     let permissions = metadata.permissions();
+    //     let mode = permissions.mode();
 
-    if file_type.is_socket() {
-        return format!("\x1b[1;35m{}\x1b[0m", a);
-    }
+    //     if (mode & 0o111) != 0 {
+    //         return format!("\x1b[1;32m{}\x1b[0m", a);
+    //     }
+    //     return a;
+    // }
 
-    if file_type.is_char_device() || file_type.is_block_device() {
-        return format!("\x1b[1;40;33m{}\x1b[0m", a); 
-    }
+    // if file_type.is_fifo() {
+    //     return format!("\x1b[0;40;33m{}\x1b[0m", a);
+    // }
+
+    // if file_type.is_socket() {
+    //     return format!("\x1b[1;35m{}\x1b[0m", a);
+    // }
+
+    // if file_type.is_char_device() || file_type.is_block_device() {
+    //     return format!("\x1b[1;40;33m{}\x1b[0m", a); 
+    // }
 
     a 
 }

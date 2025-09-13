@@ -15,7 +15,8 @@ fn main() -> rustyline::Result<()> {
     loop {
         let a = mp.get(&Commands::Pwd);
         let p = std::env::current_dir();
-        let mut path = if let Ok(pp) = p {
+        // let mut path = if !mp.contains_key(&Commands::Pwd)
+        let mut path = if let Ok(pp) = p && !mp.contains_key(&Commands::Pwd) {
             pp.display().to_string()
         } else {
             a.unwrap_or(&"Unknown error".to_string()).to_string()
