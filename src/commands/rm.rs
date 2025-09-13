@@ -1,7 +1,7 @@
+use crate::commands::ls::create_path;
 use crate::zero::*;
 use std::fs;
 use std::io;
-use std::path::Path;
 
 pub fn exec_rm(
     cmd: Commands,
@@ -14,9 +14,8 @@ pub fn exec_rm(
     }
 
     for i in args {
-        let path_str = format!("./{}", i);
 
-        let path = Path::new(&path_str);
+        let path = create_path(String::from(".") ,i.clone());
 
         if path.symlink_metadata().is_err() {
             println!("rm: cannot remove '{}': No such file or directory", i);
