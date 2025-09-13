@@ -7,10 +7,17 @@ pub fn exec_pwd(
     mp: &mut std::collections::HashMap<Commands, String>
 ) {
     let current_dir = current_dir();
-    if let Ok(current_dir) = current_dir {
-        println!("{}", current_dir.display());
+    let curr = mp.get(&Commands::Pwd);
+    if curr.is_none() {
+        if let Ok(path) = current_dir {
+            let path_str = path.to_string_lossy().to_string();
+            println!("{}", path_str);
+            mp.insert(Commands::Pwd, path_str);
+        } else {
+            println!("pwd: error retrieving current directory");
+        }
     } else {
-        let a = mp.get(&Commands::Pwd);
-        eprintln!("{}", a.unwrap_or(&"Unknown error".to_string()));
+        println!("{}", curr.unwrap());
     }
+    
 }

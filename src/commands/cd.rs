@@ -67,7 +67,11 @@ pub fn exec_cd(
         return;
     }
 
-    let current_before = mp.get(&Commands::Pwd).cloned().or_else(|| get_current_dir());
+    if !mp.contains_key(&Commands::Pwd) {
+        mp.insert(Commands::Pwd, get_current_dir().unwrap_or_else(|| format!("/home/{}", user)));
+    }
+
+    let current_before = mp.get(&Commands::Pwd).cloned();
     if let Err(e) = set_current_dir(&target_path) {
         println!("cd: {}: {}", target_path.replace(&format!("/home/{}", user), "~"), e);
         return;
@@ -78,7 +82,7 @@ pub fn exec_cd(
     let pwd_path = if Path::new(&target_path).is_absolute() {
         target_path.clone()
     } else {
-        let current = mp.get(&Commands::Pwd).cloned().or_else(|| get_current_dir()).unwrap_or_else(|| "/".to_string());
+        let current = mp.get(&Commands::Pwd).cloned().unwrap_or_else(|| "/".to_string());
         create_path(current, target_path.clone()).to_string_lossy().to_string()
     };
 
