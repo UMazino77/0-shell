@@ -2,10 +2,10 @@ use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
-    Command(String),  // First word: "ls", "echo"
-    Flag(String),     // Words starting with '-': "-l", "-a"
-    Argument(String), // Other words: "file.txt", "/home"
-    Semicolon,        // Added: ";" operator
+    Command(String),  
+    Flag(String),    
+    Argument(String), 
+    Semicolon,        
 }
 
 #[derive(Debug)]
@@ -75,9 +75,8 @@ impl Lexer {
                 }
             };
 
-            // Update state for next token
             is_start_of_command = match &token {
-                Token::Semicolon => true, // After semicolon, next token is a command
+                Token::Semicolon => true, 
                 _ => false,
             };
 
@@ -100,14 +99,12 @@ impl Lexer {
     fn parse_quoted_string(&mut self) -> Result<String> {
         let quote_char = self.current_char.unwrap();
         let quote_start = self.position - 1;
-        self.advance(); // Skip opening quote
-
+        self.advance(); 
         let mut content = String::new();
         let mut escaped = false;
 
         while let Some(c) = self.current_char {
             if escaped {
-                // Handle escape sequences inside quotes
                 match c {
                    
                     '\\' => content.push('\\'),
@@ -118,7 +115,6 @@ impl Lexer {
                     '$' => content.push('$'), 
                     '`' => content.push('`'), 
                     _ => {
-                        // Unknown escape sequence, treat literally
                         content.push('\\');
                         content.push(c);
                     }
@@ -130,7 +126,7 @@ impl Lexer {
                 escaped = true;
                 self.advance();
             } else if c == quote_char {
-                self.advance(); // Skip closing quote
+                self.advance();
                 return Ok(content);
             } else {
                 content.push(c);
@@ -138,7 +134,6 @@ impl Lexer {
             }
         }
 
-        // If we get here, we reached EOF without closing quote
         Err(LexerError::UnclosedQuote(quote_start))
     }
 
@@ -170,7 +165,6 @@ pub fn has_unclosed_quotes(input: &str) -> bool {
     lexer.tokenize().is_err()
 }
 
-// Updated tokenize_input to handle semicolons and return multiple command groups
 pub fn tokenize_input(input: &str, user: &str) -> Vec<Vec<String>> {
     let mut lexer = Lexer::new(input.to_string());
     let mut result = Vec::new();
@@ -187,7 +181,6 @@ pub fn tokenize_input(input: &str, user: &str) -> Vec<Vec<String>> {
                         }
                     }
                     Token::Command(cmd) | Token::Flag(cmd) | Token::Argument(cmd) => {
-                        // Handle ~ expansion
                         let expanded = if cmd.starts_with('~') {
                             cmd.replacen("~", &format!("/home/{}", user), 1)
                         } else {
@@ -199,7 +192,6 @@ pub fn tokenize_input(input: &str, user: &str) -> Vec<Vec<String>> {
                 }
             }
 
-            // Add the last command if exists
             if !current_command.is_empty() {
                 result.push(current_command);
             }

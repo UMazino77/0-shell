@@ -14,8 +14,8 @@ pub mod zero {
     use crate::commands::clear::exec_clear;
     use crate::commands::ls::exec_ls;
     use crate::commands::touch::exec_touch;
+    use crate::commands::echo::exec_echo;
 
-    // use crate::commands::echo::exec_echo;
 
 
 
@@ -81,7 +81,7 @@ pub mod zero {
             Commands::History => {exec_history(cmd, args, mp); mp.remove(&Commands::History);},
             Commands::Ls => {exec_ls(cmd, args, mp); mp.remove(&Commands::Ls);},
             Commands::Touch => {exec_touch(cmd, args, mp); mp.remove(&Commands::Touch);},
-            _ => println!("Command {:?} not implemented yet", cmd),
+            Commands::Echo => {exec_echo(cmd, args, mp)},
         }
     }
 
@@ -116,7 +116,7 @@ pub mod zero {
             Commands::Mkdir => check(cmd.clone(), mp, "p".to_string()),
             Commands::Cp => check(cmd.clone(), mp, "r".to_string()),
             Commands::Cat => check(cmd.clone(), mp, "n".to_string()),
-            Commands::Ls => check(cmd.clone(), mp, "alF".to_string()),
+            Commands::Ls => check(cmd.clone(), mp, "alFr".to_string()),
             Commands::Echo => check(cmd.clone(), mp, String::new()),
             Commands::Clear => check(cmd.clone(), mp, String::new()),
             Commands::Pwd => check(cmd.clone(), mp, String::new()),

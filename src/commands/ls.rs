@@ -27,15 +27,8 @@ pub fn exec_ls(
     let mut files = Vec::new();
     let mut folders = Vec::new();
     let mut dash = false;
-
-    handle_files_folders(&mut files, &mut folders, args);
-
-    // println!("{}   {}", files.len(), folders.len());
-
-    sort_fd(&mut files);
-    sort_fd(&mut folders);
-
-    // println!("{:?}", folders);
+    let mut dashl = false;
+    let mut rev = false;
 
     match mp.get(&cmd) {
         Some(flags) => {
@@ -46,22 +39,36 @@ pub fn exec_ls(
                 dash = true;
             }
             if flags.contains('l') {
-                long_ls(files.clone(), folders.clone(), hidden, dash);
-            } else {
-                default_ls(files.clone(), folders.clone(), hidden, dash);
+                dashl = true;
+            }
+            if flags.contains('r') {
+                rev = true;
             }
         }
-        None => {
-            default_ls(files.clone(), folders.clone(), hidden, dash);
-            // println!("default");
-        }
+        None => {}
+    }
+
+    handle_files_folders(&mut files, &mut folders, args, dashl);
+
+    // println!("{}   {}", files.len(), folders.len());
+
+    sort_fd(&mut files);
+    sort_fd(&mut folders);
+
+    // println!("{:?}", folders);
+
+    if dashl {
+        long_ls(files.clone(), folders.clone(), hidden, dash, rev);
+    } else {
+        default_ls(files.clone(), folders.clone(), hidden, dash, rev);
     }
 }
 
 pub fn handle_files_folders(
     files: &mut Vec<String>,
     folders: &mut Vec<String>,
-    args: &mut Vec<String>
+    args: &mut Vec<String>,
+    dashl: bool
 ) {
     for i in args {
         let path = create_path(String::from("."), i.clone());
@@ -69,9 +76,25 @@ pub fn handle_files_folders(
         match path.symlink_metadata() {
             Ok(metadata) => {
                 if metadata.file_type().is_symlink() {
-                    files.push(i.clone());
-                    if !path.exists() {
-                        println!("ls: cannot read symbolic link '{}': Permission denied", i);
+                    if dashl {
+                        files.push(i.clone());
+                        if !path.exists() {
+                            println!("ls: cannot read symbolic link '{}': Permission denied", i);
+                        }
+                    } else {
+                        match path.metadata() {
+                            Ok(target_metadata) => {
+                                if target_metadata.is_dir() {
+                                    folders.push(i.clone());
+                                } else {
+                                    files.push(i.clone());
+                                }
+                            }
+                            Err(_) => {
+                                files.push(i.clone());
+                                println!("ls: cannot read symbolic link '{}': Permission denied", i);
+                            }
+                        }
                     }
                 } else if metadata.is_dir() {
                     folders.push(i.clone());
@@ -87,19 +110,24 @@ pub fn handle_files_folders(
     }
 }
 
-pub fn default_ls(files: Vec<String>, folders: Vec<String>, hidden: bool, dash: bool) {
-    display_files(String::from("."), files.clone(), folders.len() > 0, dash);
-    display_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden, dash);
+pub fn default_ls(files: Vec<String>, folders: Vec<String>, hidden: bool, dash: bool, rev : bool) {
+    display_files(String::from("."), files.clone(), folders.len() > 0, dash, rev);
+    display_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden, dash, rev);
 }
 
-pub fn long_ls(files: Vec<String>, folders: Vec<String>, hidden: bool, dash: bool) {
-    display_long_files(String::from("."), files.clone(), folders.len() > 0, dash);
-    display_long_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden, dash);
+pub fn long_ls(files: Vec<String>, folders: Vec<String>, hidden: bool, dash: bool, rev : bool) {
+    display_long_files(String::from("."), files.clone(), folders.len() > 0, dash, rev);
+    display_long_folders(folders.clone(), files.len() != 0 || folders.len() > 1, hidden, dash, rev);
 }
 
-pub fn display_files(parent: String, files: Vec<String>, cc: bool, dash: bool) {
+pub fn display_files(parent: String, files: Vec<String>, cc: bool, dash: bool, rev : bool) {
     // let ter_width = todo!() ;
     // let max = ter_width
+    let mut files = files;
+    if rev {
+        files.reverse();
+    }
+
     let mut j = 0;
     for i in &files {
         let path = create_path(parent.clone(), i.clone());
@@ -117,11 +145,36 @@ pub fn display_files(parent: String, files: Vec<String>, cc: bool, dash: bool) {
     }
 }
 
-pub fn display_folders(folders: Vec<String>, cc: bool, hidden: bool, dash: bool) {
+pub fn display_folders(folders: Vec<String>, cc: bool, hidden: bool, dash: bool, rev : bool) {
     let mut jj = 0;
     for i in &folders {
         let a = create_path(String::from("."), i.clone());
-        let mut aa: Vec<_> = read_dir(a).unwrap().collect();
+        
+        let target_path = if let Ok(metadata) = a.symlink_metadata() {
+            if metadata.file_type().is_symlink() {
+                match a.canonicalize() {
+                    Ok(canonical_path) => canonical_path,
+                    Err(_) => {
+                        println!("ls: cannot access '{}': No such file or directory", i);
+                        jj += 1;
+                        continue;
+                    }
+                }
+            } else {
+                a.clone()
+            }
+        } else {
+            a.clone()
+        };
+        
+        let mut aa: Vec<_> = match read_dir(&target_path) {
+            Ok(entries) => entries.collect(),
+            Err(_) => {
+                println!("ls: cannot open directory '{}': Permission denied", i);
+                jj += 1;
+                continue;
+            }
+        };
 
         if cc {
             println!("{i}:");
@@ -146,7 +199,7 @@ pub fn display_folders(folders: Vec<String>, cc: bool, hidden: bool, dash: bool)
         sort_fd(&mut new_fold);
         // println!("{:?}  +++", new_fold) ;
 
-        display_files(i.to_string(), new_fold, jj != folders.clone().len() - 1, dash);
+        display_files(target_path.to_string_lossy().to_string(), new_fold, jj != folders.clone().len() - 1, dash, rev);
 
         jj += 1;
     }
@@ -234,7 +287,7 @@ pub fn dash_f(path: PathBuf, dash: bool) -> String {
                 } else if target_metadata.file_type().is_socket() {
                     return String::from("=");  
                 } else {
-                    return String::from("@");  
+                    return String::new();  
                 }
             }
             Err(_) => {
@@ -269,7 +322,11 @@ pub fn dash_f(path: PathBuf, dash: bool) -> String {
     String::new()
 }
 
-pub fn display_long_files(parent: String, files: Vec<String>, cc: bool, dash: bool) {
+pub fn display_long_files(parent: String, files: Vec<String>, cc: bool, dash: bool, rev : bool) {
+    let mut files = files;
+    if rev {
+        files.reverse();
+    }
     let mut permissions_vec = Vec::new();
     let mut links_vec = Vec::new();
     let mut username_vec = Vec::new();
@@ -482,12 +539,31 @@ fn has_acl(path: &Path) -> bool {
     }
 }
 
-pub fn display_long_folders(folders: Vec<String>, cc: bool, hidden: bool, dash: bool) {
+pub fn display_long_folders(folders: Vec<String>, cc: bool, hidden: bool, dash: bool, rev : bool) {
     let mut jj = 0;
     for i in &folders {
         let a = create_path(String::from("."), i.clone());
+        
+        let target_path = if let Ok(metadata) = a.symlink_metadata() {
+            if metadata.file_type().is_symlink() {
+                match a.canonicalize() {
+                    Ok(canonical_path) => canonical_path,
+                    Err(_) => {
+                        println!("ls: cannot access '{}': No such file or directory", i);
+                        jj += 1;
+                        continue;
+                    }
+                }
+            } else {
+                a.clone()
+            }
+        } else {
+            a.clone()
+        };
 
-        let Ok(aaa) = read_dir(&a) else {
+        let Ok(aaa) = read_dir(&target_path) else {
+            println!("ls: cannot open directory '{}': Permission denied", i);
+            jj += 1;
             continue;
         };
 
@@ -502,15 +578,15 @@ pub fn display_long_folders(folders: Vec<String>, cc: bool, hidden: bool, dash: 
         } else {
             total += total_blocks(&aa);
             // println!("+++ total {}", total);
-            if let Ok(current_metadata) = a.metadata() {
+            if let Ok(current_metadata) = target_path.metadata() {
                 total += current_metadata.blocks() / 2;
                 // println!("sss");
             }
             // println!("--- total {}", total);
 
-            // println!("+-+- {:?}", a);
+            // println!("+-+- {:?}", target_path);
 
-            let parent_path = a.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("..")).to_path_buf();
+            let parent_path = target_path.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("..")).to_path_buf();
 
             // println!("*** parent_path: {:?}", parent_path);
             
@@ -544,7 +620,7 @@ pub fn display_long_folders(folders: Vec<String>, cc: bool, hidden: bool, dash: 
         sort_fd(&mut new_fold);
         // println!("{:?}  +++", new_fold) ;
 
-        display_long_files(i.to_string(), new_fold, jj != folders.clone().len() - 1, dash);
+        display_long_files(target_path.to_string_lossy().to_string(), new_fold, jj != folders.clone().len() - 1, dash, rev);
 
         jj += 1;
     }

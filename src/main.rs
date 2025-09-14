@@ -1,5 +1,4 @@
 use rustyline::{Editor, error::ReadlineError};
-use shell::commands::echo::exec_echo;
 use shell::lexer::token::{has_unclosed_quotes, tokenize_input};
 use shell::zero::*;
 use std::collections::HashMap;
@@ -41,7 +40,6 @@ fn main() -> rustyline::Result<()> {
             }
         };
 
-        // Check for unclosed quotes using lexer
         while has_unclosed_quotes(&line) {
             match rl.readline("dquote> ") {
                 Ok(additional_input) => {
@@ -70,9 +68,6 @@ fn main() -> rustyline::Result<()> {
 
         for j in b.iter_mut() {
             match Commands::from_str(&j[0]) {
-                Some(Commands::Echo) => {
-                    exec_echo(Commands::Echo, &mut j[1..].to_owned(), &mut mp);
-                }
                 Some(cmd) => {
                     execute(cmd, &mut j[1..].to_owned(), &mut mp);
                 }
@@ -86,7 +81,6 @@ fn main() -> rustyline::Result<()> {
     Ok(())
 }
 
-// Keep utility functions
 pub fn col_user() -> String {
     let user = whoami::username();
     format!("\x1b[1;32m{}\x1b[0m", user)
