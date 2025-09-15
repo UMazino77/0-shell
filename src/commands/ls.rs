@@ -121,28 +121,140 @@ pub fn long_ls(files: Vec<String>, folders: Vec<String>, hidden: bool, dash: boo
 }
 
 pub fn display_files(parent: String, files: Vec<String>, cc: bool, dash: bool, rev : bool) {
-    // let ter_width = todo!() ;
-    // let max = ter_width
     let mut files = files;
     if rev {
         files.reverse();
     }
 
-    let mut j = 0;
-    for i in &files {
-        let path = create_path(parent.clone(), i.clone());
-        let ff = dash_f(path.clone(), dash);
+    if files.is_empty() {
+        return;
+    }
 
-        if j == files.len() - 1 {
-            println!("{}{ff}", color(i.clone(), &path, false));
-            if cc {
+    let terminal_width = get_terminal_width().unwrap_or(80);
+    
+    let mut file_info: Vec<(String, usize)> = Vec::new();
+    
+    for file in &files {
+        let path = create_path(parent.clone(), file.clone());
+        let dash_suffix = dash_f(path.clone(), dash);
+        let colored_name = color(file.clone(), &path, false);
+        let full_display = format!("{}{}", colored_name, dash_suffix);
+        
+        let display_width = calculate_display_width(&format!("{}{}", file, dash_suffix));
+        
+        file_info.push((full_display, display_width));
+    }
+    
+    let gutter_size = 2; 
+    let total_files = files.len();
+    
+    let max_possible_columns = (terminal_width / 3).max(1); 
+    let mut best_columns = 1;
+    
+    for num_cols in (1..=max_possible_columns).rev() {
+        if can_fit_in_columns(&file_info, num_cols, terminal_width, gutter_size) {
+            best_columns = num_cols;
+            break;
+        }
+    }
+    
+    if best_columns == 1 {
+        for (display_string, _) in &file_info {
+            println!("{}", display_string);
+        }
+    } else {
+        let rows = (total_files + best_columns - 1) / best_columns;
+        
+        let mut column_widths = vec![0; best_columns];
+        for col in 0..best_columns {
+            for row in 0..rows {
+                let index = row + col * rows;
+                if index < file_info.len() {
+                    column_widths[col] = column_widths[col].max(file_info[index].1);
+                }
+            }
+        }
+        
+        for row in 0..rows {
+            let mut line_parts = Vec::new();
+            
+            for col in 0..best_columns {
+                let index = row + col * rows;
+                if index < file_info.len() {
+                    let (display_string, width) = &file_info[index];
+                    if col == best_columns - 1 {
+                        line_parts.push(display_string.clone());
+                    } else {
+                        let padding = column_widths[col] - width + gutter_size;
+                        line_parts.push(format!("{}{}", display_string, " ".repeat(padding)));
+                    }
+                }
+            }
+            
+            println!("{}", line_parts.join(""));
+            if cc && row == rows - 1 {
                 println!();
             }
-        } else {
-            print!("{}{ff}  ", color(i.clone(), &path, false));
         }
-        j += 1;
     }
+    
+}
+
+fn can_fit_in_columns(file_info: &[(String, usize)], num_cols: usize, terminal_width: usize, gutter_size: usize) -> bool {
+    if num_cols == 1 {
+        return true;
+    }
+    
+    let total_files = file_info.len();
+    let rows = (total_files + num_cols - 1) / num_cols;
+    
+    let mut column_widths = vec![0; num_cols];
+    for col in 0..num_cols {
+        for row in 0..rows {
+            let index = row + col * rows;
+            if index < file_info.len() {
+                column_widths[col] = column_widths[col].max(file_info[index].1);
+            }
+        }
+    }
+    
+    let total_content_width: usize = column_widths.iter().sum();
+    let total_gutter_width = (num_cols - 1) * gutter_size;
+    let total_width_needed = total_content_width + total_gutter_width;
+    
+    total_width_needed <= terminal_width
+}
+
+fn get_terminal_width() -> Option<usize> {
+    if let Some(size) = term_size::dimensions() {
+        return Some(size.0);
+    }
+
+    None
+}
+
+fn calculate_display_width(text: &str) -> usize {
+    let mut width = 0;
+    let mut in_escape = false;
+    let chars: Vec<char> = text.chars().collect();
+    let mut i = 0;
+    
+    while i < chars.len() {
+        if chars[i] == '\x1b' && i + 1 < chars.len() && chars[i + 1] == '[' {
+            in_escape = true;
+            i += 2;
+        } else if in_escape && chars[i] == 'm' {
+            in_escape = false;
+            i += 1;
+        } else if in_escape {
+            i += 1;
+        } else {
+            width += 1;
+            i += 1;
+        }
+    }
+    
+    width
 }
 
 pub fn display_folders(folders: Vec<String>, cc: bool, hidden: bool, dash: bool, rev : bool) {
@@ -247,7 +359,7 @@ pub fn create_path(a: String, c : String) -> PathBuf {
     if c.starts_with("/") {
         PathBuf::from(c)
     } else {
-        PathBuf::from(format!("{}/{}", a, c))
+        PathBuf::from(a).join(c)
     }
 }
 
@@ -618,6 +730,7 @@ pub fn display_long_folders(folders: Vec<String>, cc: bool, hidden: bool, dash: 
         }
         // println!("{:?}", new_fold) ;
         sort_fd(&mut new_fold);
+        
         // println!("{:?}  +++", new_fold) ;
 
         display_long_files(target_path.to_string_lossy().to_string(), new_fold, jj != folders.clone().len() - 1, dash, rev);

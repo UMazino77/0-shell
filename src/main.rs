@@ -64,8 +64,6 @@ fn main() -> rustyline::Result<()> {
 
         let mut b = tokenize_input(&line, &user);
 
-        remove_quotes(&mut b);
-
         for j in b.iter_mut() {
             match Commands::from_str(&j[0]) {
                 Some(cmd) => {
@@ -91,18 +89,4 @@ pub fn col_path(a: String) -> String {
         "\x1b[1;33m[<\x1b[0m\x1b[1;1m{}\x1b[0m\x1b[1;33m>]\x1b[0m",
         a
     )
-}
-
-pub fn remove_quotes(args: &mut Vec<Vec<String>>) {
-    // let l = args.len();
-    for a in args.iter_mut() {
-        for aa in a.iter_mut() {
-            aa.retain(|c| c != '\'' && c != '"');
-        }
-    }
-    args.retain(|a| !a.is_empty());
-
-    // if args.len() != l {
-    //     println!("syntax error near unexpected token `;'");
-    // }
 }
