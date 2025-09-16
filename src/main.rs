@@ -4,44 +4,39 @@ use shell::zero::*;
 use std::collections::HashMap;
 
 fn main() -> rustyline::Result<()> {
-    let mut rl = Editor::<(), _>::new()?;
+    let mut editor = Editor::<(), _>::new()?;
     let user = whoami::username();
     let his_path = format!("/home/{}/.zero-history.txt", user);
-    let _ = rl.load_history(&his_path);
-    let mut mp = HashMap::new();
-    // println!("hello'$'\n''world");
+    let _ = editor.load_history(&his_path);
+    let mut cmd_map = HashMap::new();
 
     loop {
-        let a = mp.get(&Commands::Pwd);
-        let p = std::env::current_dir();
-        // let mut path = if !mp.contains_key(&Commands::Pwd)
-        let mut path = if let Ok(pp) = p && !mp.contains_key(&Commands::Pwd) {
-            pp.display().to_string()
+        let last_place = cmd_map.get(&Commands::Pwd);
+        let current_place = std::env::current_dir();
+        let mut path = if let Ok(place) = current_place && !cmd_map.contains_key(&Commands::Pwd) {
+            place.display().to_string()
         } else {
-            a.unwrap_or(&"Unknown error".to_string()).to_string()
+            last_place.unwrap_or(&"Unknown error".to_string()).to_string()
         };
         path = path.replace(&("/home/".to_owned() + &user), "~");
 
-        let mut line = match rl.readline(&format!("{}:{} $ ", col_user(), col_path(path))) {
+        let mut line = match editor.readline(&format!("{}:{} $ ", col_user(), col_path(path))) {
             Ok(line) => {
-                let _ = rl.add_history_entry(line.as_str());
-                let _ = rl.append_history(&his_path);
+                let _ = editor.add_history_entry(line.as_str());
+                let _ = editor.append_history(&his_path);
                 line
             }
             Err(ReadlineError::Interrupted) => {
                 println!("^C");
                 break;
             }
-            Err(ReadlineError::Eof) => {
-                break;
-            }
             Err(_) => {
-                continue;
+                break;
             }
         };
 
         while has_unclosed_quotes(&line) {
-            match rl.readline("dquote> ") {
+            match editor.readline("dquote> ") {
                 Ok(additional_input) => {
                     line.push('\n');
                     line.push_str(&additional_input);
@@ -62,20 +57,19 @@ fn main() -> rustyline::Result<()> {
             }
         }
 
-        let mut b = tokenize_input(&line, &user);
+        let mut input = tokenize_input(&line, &user);
 
-        for j in b.iter_mut() {
-            match Commands::from_str(&j[0]) {
+        for line in input.iter_mut() {
+            match Commands::from_str(&line[0]) {
                 Some(cmd) => {
-                    execute(cmd, &mut j[1..].to_owned(), &mut mp);
+                    execute(cmd, &mut line[1..].to_owned(), &mut cmd_map);
                 }
                 None => {
-                    println!("Command '{}' not found", j[0]);
+                    println!("Command '{}' not found", line[0]);
                 }
             }
         }
     }
-
     Ok(())
 }
 
@@ -84,9 +78,9 @@ pub fn col_user() -> String {
     format!("\x1b[1;32m{}\x1b[0m", user)
 }
 
-pub fn col_path(a: String) -> String {
+pub fn col_path(path: String) -> String {
     format!(
         "\x1b[1;33m[<\x1b[0m\x1b[1;1m{}\x1b[0m\x1b[1;33m>]\x1b[0m",
-        a
+        path
     )
 }

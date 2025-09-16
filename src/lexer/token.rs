@@ -41,7 +41,7 @@ impl Lexer {
     }
 
     fn advance(&mut self) {
-        if self.position < self.input.len() {
+        if self.position < self.input.chars().count() {
             self.current_char = Some(self.input.chars().nth(self.position).unwrap());
             self.position += 1;
         } else {

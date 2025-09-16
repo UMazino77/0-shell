@@ -15,6 +15,11 @@ pub fn exec_rm(
 
     for i in args {
 
+        // if i == "." || i == ".." {
+        //     println!("rm: refusing to remove '.' or '..' directory: skipping '..'");
+        //     continue;
+        // }
+
         let path = create_path(String::from(".") ,i.clone());
 
         if path.symlink_metadata().is_err() {

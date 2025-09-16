@@ -2,17 +2,17 @@ use crate::zero::{detect_flags, valid_flags};
 use std::fs::* ;
 
 pub fn exec_touch(
-    _cmd: crate::zero::Commands,
+    cmd: crate::zero::Commands,
     args: &mut Vec<String>,
-    _mp: &mut std::collections::HashMap<crate::zero::Commands, String>
+    cmd_map: &mut std::collections::HashMap<crate::zero::Commands, String>
 ) {
     if args.is_empty() {
         println!("touch: missing file operand");
         return;
     }
 
-    detect_flags(_cmd.clone(), args, _mp);
-    if !valid_flags(_cmd, _mp) {
+    detect_flags(cmd.clone(), args, cmd_map);
+    if !valid_flags(cmd, cmd_map) {
         return;
     }
 

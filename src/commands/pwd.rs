@@ -2,10 +2,14 @@ use std::env::current_dir;
 use crate::zero::*;
 
 pub fn exec_pwd(
-    _cmd: Commands,
-    _args: &mut Vec<String>,
+    cmd: Commands,
+    args: &mut Vec<String>,
     mp: &mut std::collections::HashMap<Commands, String>
 ) {
+    detect_flags(cmd.clone(), args, mp);
+    if valid_flags(cmd.clone(), mp) == false {
+        return ;
+    }
     let current_dir = current_dir();
     let curr = mp.get(&Commands::Pwd);
     if curr.is_none() {
