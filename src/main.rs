@@ -9,7 +9,6 @@ fn main() -> rustyline::Result<()> {
     let his_path = format!("/home/{}/.zero-history.txt", user);
     let _ = editor.load_history(&his_path);
     let mut cmd_map = HashMap::new();
-
     loop {
         let last_place = cmd_map.get(&Commands::Pwd);
         let current_place = std::env::current_dir();
@@ -18,6 +17,7 @@ fn main() -> rustyline::Result<()> {
         } else {
             last_place.unwrap_or(&"Unknown error".to_string()).to_string()
         };
+        cmd_map.remove(&Commands::Pwd);
         path = path.replace(&("/home/".to_owned() + &user), "~");
 
         let mut line = match editor.readline(&format!("{}:{} $ ", col_user(), col_path(path))) {
